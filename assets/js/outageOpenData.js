@@ -1,7 +1,6 @@
-var request = new XMLHttpRequest()
+
 
 $(document).ready(function(){
-var $content = $('#content');
 var $tcontent = $('#tcontent');
 $.get('https://webs.water.gov.taipei/apps/outage.asmx/outageOpenData',function(e){
     console.log(e);

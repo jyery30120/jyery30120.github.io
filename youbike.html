@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>YouBike2.0臺北市公共自行車即時資訊</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+		integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+		crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+		integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+		crossorigin=""></script>
+	<script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+
+
+
+</head>
+
+<body>
+
+	<div id="page-wrapper">
+		<header id="header">
+			<h1 id="logo"><a href="index.html">Jerry</a></h1>
+			<nav>
+				YouBike2.0臺北市公共自行車即時資訊
+				<nav>
+		</header>
+
+		<div id="mapid"></div>
+		<style>
+			#mapid {
+				width: 100%;
+				height: 800px;
+			}
+
+			.leaflet-popup-content-wrapper,
+			.leaflet-popup.tip {
+				background-color: #000
+			}
+		</style>
+		<script src="assets/js/youbike.js"></script>
+
+
+	</div>
+</body>
+
+</html>
