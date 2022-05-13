@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<!--
+	Landed by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>excelToSql</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+	</head>
+	<body class="is-preload" >
+        <div id="page-wrapper">
+        <header id="header">
+            <h1 id="logo"><a href="index.html">Jerry</a></h1>
+        </header>    
+        <section class="calculator" >
+            <section class="fields">
+              <h2 >Excel 轉 SQL 小工具</h2>
+              <div class="bmi_calcu">
+                <label for="inputText">輸入table名稱 :</label>
+                <input type="text" class="inputText" min="0">
+
+                <label for="inputCol">輸入column數量 :(目前最大支援到26)</label>
+                <input type="text" class="inputCol" min="0">
+              </div>
+              <div class="btn_block">
+              <input type="submit" value="送出"  class="convert"> 
+                </div>
+                </div>
+            </section>
+            <section class="result">
+              <h2 class="result_txt">轉換結果：</h2>
+              <p id="resultText"></p>
+            </section>
+            <section class="demo">
+              <h2 class="demo_txt">Demo：</h2>
+              <h3>假設現在有一個Excel資料，有人叫你塞進去table裡</h3>
+              <img src="images/excelToSql1.png">
+              <h3>可以看到有A、B、C、D共四個欄位，在上方輸入TABLE NAME、欄位輸入4會產生以下SQL</h3>
+              <h3>="INSERT INTO DUAL VALUES('"&A2 &"','"&B2 &"','"&C2 &"','"&D2 &"');"</h3>
+              <h3>然後把SQL貼到EXCEL的第五個欄位，就會帶出結果</h3>
+              <img src="images/excelToSql3.png">
+              <h3>點格子出現綠框後把綠點後往下拉，可自動帶出所有值，然後就可以複製E欄到SQL的Commander上執行了</h3>
+              <img src="images/excelToSql2.png">
+              <img src="images/excelToSql4.png">
+            </section>
+          <section class="bottom">
+          </section>
+          </section>
+        </div>
+    </body>    
+    <script>
+
+      // 宣告 DOM
+      let resultText =document.querySelector('#resultText');
+      // resultText.style.display="none";
+      //事件點擊按鈕 
+      let btn =document.querySelector('.convert');
+      // 取出輸入值寫入畫面
+      function convertText(convertCase){
+          let inputText =document.querySelector('.inputText').value;
+          let inputCol =document.querySelector('.inputCol').value;
+          let resultText =document.querySelector('#resultText');
+          //  印出值來
+          if (isNaN(inputCol)){
+            alert("column數量請輸入數字")
+            return
+          }
+          if(inputCol > 26 ){
+            alert("目前只支援到26")
+            return
+          }
+          var step;
+          if((inputText !="" )){
+                let eqSign = '"';
+                let sql1 = "=" + eqSign + "INSERT INTO " + String(inputText).toUpperCase() + " VALUES('" + eqSign;
+                let sql2 = "";
+                for (step = 0; step < inputCol;step++){
+                  sql2 += "&" + String.fromCharCode(step + 65) + "2 &" + eqSign +"','" + eqSign;
+                }
+                let sql3 = ");" + eqSign
+                resultText.innerHTML = sql1 + sql2.substring(0, sql2.length - 3) + sql3;
+          }else{
+              // inputText.style.display="none";
+              alert("請輸入值")
+              return
+          }
+      }
+      //事件監聽
+      btn.addEventListener('click',function() {convertText("Upper")});
+    </script>    
+    
+</html>   
