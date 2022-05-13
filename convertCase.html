@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<!--
+	Landed by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>convertCase</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+	</head>
+	<body class="is-preload" >
+        <div id="page-wrapper">
+        <header id="header">
+            <h1 id="logo"><a href="index.html">Jerry</a></h1>
+        </header>    
+        <section class="calculator" >
+            <section class="fields">
+              <h2 >大小寫轉換器</h2>
+              <div class="bmi_calcu">
+                <label for="inputText">輸入英文字串 :</label>
+                <input type="text" class="inputText" min="0">
+              </div>
+              <div class="btn_block">
+              <input type="submit" value="轉大寫"  class="convertUpper"> 
+              <input type="submit" value="轉小寫"  class="convertLower"> 
+                </div>
+                </div>
+            </section>
+            <section class="result">
+              <h2 class="result_txt">轉換結果：</h2>
+              <p id="resultText"></p>
+            </section>
+          <section class="bottom">
+          </section>
+          </section>
+        </div>
+    </body>    
+    <script>
+
+      // 宣告 DOM
+      let resultText =document.querySelector('#resultText');
+      // resultText.style.display="none";
+      //事件點擊按鈕 
+      let btnUpper =document.querySelector('.convertUpper');
+      let btnLower =document.querySelector('.convertLower');
+      // 取出輸入值寫入畫面
+      function convertText(convertCase){
+          let inputText =document.querySelector('.inputText').value;
+          let resultText =document.querySelector('#resultText');
+          //  印出值來
+          if((inputText !="" )){
+              // inputText.style.display="block";
+              if(convertCase == "Upper"){
+                resultText.innerHTML = String(inputText).toUpperCase();
+              }else{
+                resultText.innerHTML = String(inputText).toLowerCase();
+              }
+          }else{
+              // inputText.style.display="none";
+              alert("請輸入值")
+              return
+          }
+      }
+      //事件監聽
+      btnUpper.addEventListener('click',function() {convertText("Upper")});
+      btnLower.addEventListener('click',function() {convertText("Lower")});
+    </script>    
+    
+</html>   
