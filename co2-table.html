@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<!--
+	Landed by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>convertCase</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+        <style>p{display: inline-block; }</style>
+	</head>
+	<body class="is-preload" >
+        <div id="page-wrapper">
+        <header id="header">
+            <h1 id="logo"><a href="index.html">Jerry</a></h1>
+        </header>    
+        <section class="calculator" >
+            <section class="fields">
+              <h2 >CO2 TABLE</h2>
+              <div class="bmi_calcu">
+                <p>NOW SET :</p>
+                <p id="setText">0</p>
+              </div>
+              <div class="btn_block">
+                </div>
+                </div>
+            </section>
+            <section class="result">
+              <p class="result_txt">呼吸時間(Breath)：</p>
+              <p id="resultText">00:00:00.000</p>
+              <br>
+              <p class="result_txt_Breath">閉氣時間(Apnea)：</p>
+              <p id="resultTextBreath">00:00:00.000</p>
+              <h2 class="co2Table">co2 Table：</h2>
+              <button type="button" id="startButton">開始(呼吸)</button>
+              <button type="button" id="resetButton">重置</button>
+              <br>
+              <!-- <p><img src="images/CO2-Table.jpg" width="800"></p> -->
+              <p><img src="https://s3-ap-southeast-1.amazonaws.com/bbfreesing/wp-content/uploads/2020/04/25043627/CO2-Table.jpg" width="800"></p> 
+            </section>
+          <section class="bottom">
+          </section>
+          </section>
+
+        </div>
+    </body>    
+    <script>
+        var startTime = 0;
+        var intervalId;
+        var intervalIdBreath;
+        var reset = false;
+        var setCount = 0;
+
+        function updateCounter() {
+            let currentTime = Date.now();
+            let msecond = ("0" + (currentTime - startTime) % 1000).substr(-3, 3);
+            let counter = Math.floor((currentTime - startTime)/1000);
+            let hour = ("0" + Math.floor(counter / 3600)).substr(-2, 2);
+            let minute = ("0" + Math.floor((counter % 3600) / 60)).substr(-2, 2);
+            let second = ("0" + Math.floor(counter % 60)).substr(-2, 2);
+
+            document.getElementById('resultText').textContent = `${hour}:${minute}:${second}.${msecond}`;
+        }
+
+        function updateCounterBreath() {
+            let currentTime = Date.now();
+            let msecond = ("0" + (currentTime - startTime) % 1000).substr(-3, 3);
+            let counter = Math.floor((currentTime - startTime)/1000);
+            let hour = ("0" + Math.floor(counter / 3600)).substr(-2, 2);
+            let minute = ("0" + Math.floor((counter % 3600) / 60)).substr(-2, 2);
+            let second = ("0" + Math.floor(counter % 60)).substr(-2, 2);
+
+            document.getElementById('resultTextBreath').textContent = `${hour}:${minute}:${second}.${msecond}`;
+        }
+
+        var counting = false;
+        var btn = document.getElementById('startButton');
+        btn.addEventListener('click', function () {
+        if (!reset){
+            if (counting) {
+                clearInterval(intervalId);
+                startTime = Date.now();
+                intervalIdBreath = setInterval(updateCounterBreath, 15);
+            } else {
+                setCount += 1;
+                document.getElementById('setText').textContent = 'Set ' + setCount;
+                clearInterval(intervalIdBreath);
+                startTime = Date.now();
+                intervalId = setInterval(updateCounter, 15);
+            }
+        }    
+        
+        counting = !counting;
+        btn.textContent = counting ? '開始閉氣':'開始呼吸';
+        });
+
+        var resetBtn = document.getElementById('resetButton');
+        resetBtn.addEventListener('click', function () {
+            clearInterval(intervalId);
+            clearInterval(intervalIdBreath);
+            document.getElementById('resultTextBreath').textContent = '00:00:00.000';
+            document.getElementById('resultText').textContent = '00:00:00.000';
+            setCount = 0;
+        });
+    </script>    
+    
+</html>   
