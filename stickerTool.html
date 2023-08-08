@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>HTML Content Filter</title>
+  <title>Sticker Tool</title>
+  <meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+    <style>p{display: inline-block; }</style>
 </head>
 <body>
+  <header id="header">
+    <h1 id="logo"><a href="index.html">Jerry</a></h1>
+  </header> 
+  <br><br>
   <textarea id="htmlContent" rows="10" cols="50" placeholder="在此處張貼HTML内容"></textarea><br>
-  <button id="filterButton">篩選<img>標籤並替換</button><br>
+  <h3>使用方法：到 <a href="https://yabeline.tw/Homepage.php">https://yabeline.tw/Homepage.php</a>找到喜歡的動圖， </h3>
+  <h3>右鍵->檢視原始碼，將網頁原始碼全部貼到上面的對話窗，可以快速取得圖檔</h3>
+  <h3>可以直接存或複製圖片連結後貼到<a href="https://ezgif.com/resize">https://ezgif.com/resize</a>調整大小</h3>
+  <button id="filterButton">取得gif圖</button>
   <div id="filteredContent"></div>
 
   <script>
@@ -24,14 +36,14 @@
         var dataAnimValue = imgTag.getAttribute("data-anim");
         if (dataAnimValue) {
           imgTag.setAttribute("src", dataAnimValue);
-		  imgTag.setAttribute("style", "height:auto;width:200px;");
-		  imgTagContent += imgTag.outerHTML + "";
+		      imgTag.setAttribute("style", "height:auto;width:200px;");
+		      imgTagContent += imgTag.outerHTML + "";
         }
-        
       }
-      
-      filteredContent.innerHTML = "<h3>篩選出的<img>標籤（src已替換為data-anim）：</h3>" + imgTagContent;
+      filteredContent.innerHTML = imgTagContent;
     });
+    
   </script>
 </body>
 </html>
+
