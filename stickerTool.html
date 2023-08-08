@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HTML Content Filter</title>
+</head>
+<body>
+  <textarea id="htmlContent" rows="10" cols="50" placeholder="在此處張貼HTML内容"></textarea><br>
+  <button id="filterButton">篩選<img>標籤並替換</button><br>
+  <div id="filteredContent"></div>
+
+  <script>
+    document.getElementById("filterButton").addEventListener("click", function() {
+      var htmlContent = document.getElementById("htmlContent").value;
+      var filteredContent = document.getElementById("filteredContent");
+      
+      var div = document.createElement("div");
+      div.innerHTML = htmlContent;
+      
+      var imgTags = div.getElementsByTagName("img");
+      var imgTagContent = "";
+      
+      for (var i = 0; i < imgTags.length; i++) {
+        var imgTag = imgTags[i];
+        var dataAnimValue = imgTag.getAttribute("data-anim");
+        if (dataAnimValue) {
+          imgTag.setAttribute("src", dataAnimValue);
+		  imgTag.setAttribute("style", "height:auto;width:200px;");
+		  imgTagContent += imgTag.outerHTML + "";
+        }
+        
+      }
+      
+      filteredContent.innerHTML = "<h3>篩選出的<img>標籤（src已替換為data-anim）：</h3>" + imgTagContent;
+    });
+  </script>
+</body>
+</html>
