@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Unix Timestamp 轉換器</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    /* #converter {
+      margin: 20px;
+    } */
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+</head>
+<body>
+  <header id="header">
+    <h1 id="logo"><a href="index.html">Jerry</a></h1>
+   </header>   
+   <br><br><br>
+  <div id="converter">
+    <h1>Unix Timestamp 轉換器</h1>
+    <label for="timestamp">請輸入Unix Timestamp：</label>
+    <input type="text" id="timestamp" placeholder="輸入Unix Timestamp" />
+    <button onclick="convertTimestamp()">轉換</button>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    function convertTimestamp() {
+      const timestampInput = document.getElementById("timestamp");
+      const resultElement = document.getElementById("result");
+
+      const timestamp = parseInt(timestampInput.value);
+
+      if (!isNaN(timestamp)) {
+        const date = new Date(timestamp); // Convert to milliseconds
+
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const seconds = date.getSeconds().toString().padStart(2, "0");
+
+        const formattedTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+        resultElement.textContent = `轉換結果：${formattedTime}`;
+      } else {
+        resultElement.textContent = "請輸入有效的Unix Timestamp。";
+      }
+    }
+  </script>
+</body>
+</html>
