@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>貼圖快速下載器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.3.0/jszip.min.js"></script>
+    <meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+    <style>p{display: inline-block; }</style>
+</head>
+<body>
+    <header id="header">
+        <h1 id="logo"><a href="index.html">Jerry</a></h1>
+    </header> 
+    <br><br>
+    
+    <textarea id="htmlCode" rows="7" cols="50" placeholder="貼上HTML原始碼"></textarea><br>
+
+    <p>檔名開頭:</p>
+    
+    <input type="text" id="fileName"><br>
+
+    <p>縮放比例:</p>
+
+    <input type="number" id="scaleFactor" placeholder="缩小比例（例如：0.5表示50%）" step="0.01" min="0.01" max="1" value="1" style="background-color:black;"><br><br>
+    
+    <button onclick="saveImages()">保存圖片</button>
+
+    <script>
+        function saveImages() {
+            var htmlCode = document.getElementById("htmlCode").value;
+
+            var div = document.createElement("div");
+            div.innerHTML = htmlCode;
+
+            var imgTags = div.querySelectorAll("img[src*='sticker']");
+            var scaleFactor = parseFloat(document.getElementById("scaleFactor").value);
+            var fName = document.getElementById("fileName").value;
+            var zip = new JSZip();
+
+            imgTags.forEach(function(imgTag, index) {
+                var imageUrl = imgTag.src;
+                var img = new Image();
+                img.crossOrigin = "Anonymous"; 
+                img.src = imageUrl;
+
+                img.onload = function() {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+
+                    canvas.width = img.width * scaleFactor ;
+                    canvas.height = img.height * scaleFactor ;
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    var imageDataURL = canvas.toDataURL("image/png");
+                    var imageFileName = fName + "_" + index + ".png";
+                    zip.file(imageFileName, imageDataURL.split(",")[1], { base64: true });
+
+
+                    if (index === imgTags.length - 1) {
+                        zip.generateAsync({ type: "blob" }).then(function(content) {
+                            var a = document.createElement("a");
+                            a.href = URL.createObjectURL(content);
+                            a.download = fName + ".zip"; 
+                            a.click();
+                        });
+                    }
+                };
+            });
+        }
+    </script>
+</body>
+</html>
