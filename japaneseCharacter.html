@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>日文50音輸入小工具</title>
+  <script>
+    function outputCharacter(japaneseCharacter, Katakana, englishEquivalent) {
+      var outputDiv = document.getElementById('output');
+	    var outputDivEng = document.getElementById('outputEng');
+      var outputDivKata = document.getElementById('outputKata');
+      outputDiv.innerHTML += `${japaneseCharacter}`;
+	    outputDivEng.innerHTML += `${englishEquivalent}`;
+      outputDivKata.innerHTML += `${Katakana}`;
+    }
+	
+	function searchOnGoogle() {
+      var japaneseText = document.getElementById('output').innerText;
+	  var googleSearchURL = 'https://www.google.com/search?q=' + encodeURIComponent(japaneseText + ' 翻譯');
+	  
+	  window.open(googleSearchURL, '_blank');
+    }
+    
+    function clearOutput() {
+    document.getElementById('output').innerHTML = '';
+	  document.getElementById('outputEng').innerHTML = '';
+    document.getElementById('outputKata').innerHTML = '';
+	  document.getElementById('translatedOutput').innerText = '';
+    }
+  </script>
+  <style>
+    .custom-button {
+        width: 100px; 
+    }
+
+    .space {
+        display: inline-block;
+        width: 100px; 
+    }
+
+    .result {
+      font-size: 30px;
+    }
+</style>
+</head>
+<body>
+  <h1>日文50音輸入小工具</h1>
+  
+  <div>
+    <button onclick="outputCharacter('あ', 'ア','a')" class="custom-button">あ ア a</button>
+    <button onclick="outputCharacter('い', 'イ','i')" class="custom-button">い イ i</button>
+    <button onclick="outputCharacter('う', 'ウ','u')" class="custom-button">う ウ u</button>
+    <button onclick="outputCharacter('え', 'エ','e')" class="custom-button">え エ e</button>
+    <button onclick="outputCharacter('お', 'オ','o')" class="custom-button">お オ o</button>
+    <br><br>
+    <button onclick="outputCharacter('か', 'カ','ka')" class="custom-button">か カ ka</button>
+    <button onclick="outputCharacter('き', 'キ','ki')" class="custom-button">き キ ki</button>
+    <button onclick="outputCharacter('く', 'ク','ku')" class="custom-button">く ク ku</button>
+    <button onclick="outputCharacter('け', 'ケ','ke')" class="custom-button">け ケ ke</button>
+    <button onclick="outputCharacter('こ', 'コ','ko')" class="custom-button">こ コ ko</button>
+    <br><br>
+    <button onclick="outputCharacter('さ', 'サ','sa')" class="custom-button">さ サ sa</button>
+    <button onclick="outputCharacter('し', 'シ','shi')" class="custom-button">し シ shi</button>
+    <button onclick="outputCharacter('す', 'ス','su')" class="custom-button">す ス su</button>
+    <button onclick="outputCharacter('せ', 'セ','se')" class="custom-button">せ セ se</button>
+    <button onclick="outputCharacter('そ', 'ソ','so')" class="custom-button">そ ソ so</button>
+    <br><br>
+    <button onclick="outputCharacter('た', 'タ','ta')" class="custom-button">た タ ta</button>
+    <button onclick="outputCharacter('ち', 'チ','chi')" class="custom-button">ち チ chi</button>
+    <button onclick="outputCharacter('つ', 'ツ','tsu')" class="custom-button">つ ツ tsu</button>
+    <button onclick="outputCharacter('て', 'テ','te')" class="custom-button">て テ te</button>
+    <button onclick="outputCharacter('と', 'ト','to')" class="custom-button">と ト to</button>
+    <br><br>
+    <button onclick="outputCharacter('な', 'ナ','na')" class="custom-button">な ナ na</button>
+    <button onclick="outputCharacter('に', 'ニ','ni')" class="custom-button">に ニ ni</button>
+    <button onclick="outputCharacter('ぬ', 'ヌ','nu')" class="custom-button">ぬ ヌ nu</button>
+    <button onclick="outputCharacter('ね', 'ネ','ne')" class="custom-button">ね ネ ne</button>
+    <button onclick="outputCharacter('の', 'ノ','no')" class="custom-button">の ノ no</button>
+    <br><br>
+    <button onclick="outputCharacter('は', 'ハ','ha')" class="custom-button">は ハ ha</button>
+    <button onclick="outputCharacter('ひ', 'ヒ','hi')" class="custom-button">ひ ヒ hi</button>
+    <button onclick="outputCharacter('ふ', 'フ','fu')" class="custom-button">ふ フ fu</button>
+    <button onclick="outputCharacter('へ', 'ヘ','he')" class="custom-button">へ ヘ he</button>
+    <button onclick="outputCharacter('ほ', 'ホ','ho')" class="custom-button">ほ ホ ho</button>
+    <br><br>
+    <button onclick="outputCharacter('ま', 'マ','ma')" class="custom-button">ま マ ma</button>
+    <button onclick="outputCharacter('み', 'ミ','mi')" class="custom-button">み ミ mi</button>
+    <button onclick="outputCharacter('む', 'ム','mu')" class="custom-button">む ム mu</button>
+    <button onclick="outputCharacter('め', 'メ','me')" class="custom-button">め メ me</button>
+    <button onclick="outputCharacter('も', 'モ','mo')" class="custom-button">も モ mo</button>
+    <br><br>
+    <button onclick="outputCharacter('や', 'ヤ','ya')" class="custom-button">や ヤ ya</button>
+    <span class="space"></span>
+    <button onclick="outputCharacter('ゆ', 'ユ','yu')" class="custom-button">ゆ ユ yu</button>
+    <span class="space"></span>
+    <button onclick="outputCharacter('よ', 'ヨ','yo')" class="custom-button">よ ヨ yo</button>
+    <br><br>
+    <button onclick="outputCharacter('ら', 'ラ','ra')" class="custom-button">ら ラ ra</button>
+    <button onclick="outputCharacter('り', 'リ','ri')" class="custom-button">り リ ri</button>
+    <button onclick="outputCharacter('る', 'ル','ru')" class="custom-button">る ル ru</button>
+    <button onclick="outputCharacter('れ', 'レ','re')" class="custom-button">れ レ re</button>
+    <button onclick="outputCharacter('ろ', 'ロ','ro')" class="custom-button">ろ ロ ro</button>
+    <br><br>
+    <button onclick="outputCharacter('わ', 'ワ','wa')" class="custom-button">わ ワ wa</button>
+    <span class="space"></span>
+    <span class="space"></span>
+    <span class="space"></span>
+    <button onclick="outputCharacter('を', 'ヲ','wo')" class="custom-button">を ヲ wo</button>
+    <br><br>
+    <button onclick="outputCharacter('ん', 'ン','n')" class="custom-button">ん ン n</button>
+	<br><br>
+  </div>
+  
+  <div>
+    <h2>輸出:</h2>
+    <button onclick="searchOnGoogle()">搜尋翻譯</button>
+    <button onclick="clearOutput()">清除輸出</button>
+    <div id="output" class="result"></div>
+    <div id="outputKata" class="result"></div>
+	<div id="outputEng" class="result"></div>
+  
+  </div>
+</body>
+</html>
