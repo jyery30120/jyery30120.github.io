@@ -35,9 +35,10 @@
         var imgTag = imgTags[i];
         var dataAnimValue = imgTag.getAttribute("data-anim");
         if (dataAnimValue) {
-          imgTag.setAttribute("src", dataAnimValue);
-		      imgTag.setAttribute("style", "height:auto;width:200px;");
-		      imgTagContent += imgTag.outerHTML + "";
+	  var currentSrc = dataAnimValue;
+          imgTag.setAttribute("src", currentSrc + '?timestamp=' + new Date().getTime());
+	  imgTag.setAttribute("style", "height:auto;width:200px;");
+	  imgTagContent += imgTag.outerHTML + "";
         }
       }
       filteredContent.innerHTML = imgTagContent;
