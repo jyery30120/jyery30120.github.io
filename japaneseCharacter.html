@@ -2,6 +2,10 @@
 <html>
 <head>
   <title>日文50音輸入小工具</title>
+  <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
   <script>
     function outputCharacter(japaneseCharacter, Katakana, englishEquivalent) {
       var outputDiv = document.getElementById('output');
@@ -25,6 +29,54 @@
     document.getElementById('outputKata').innerHTML = '';
 	  document.getElementById('translatedOutput').innerText = '';
     }
+
+    function convertToEnglish() {
+            // 獲取輸入的日文五十音
+            var japaneseInput = document.getElementById('japaneseInput').value;
+            var conversionMap = {
+              'あ': 'a',  'い': 'i',   'う': 'u',   'え': 'e',  'お': 'o',
+              'か': 'ka', 'き': 'ki',  'く': 'ku',  'け': 'ke', 'こ': 'ko',
+              'さ': 'sa', 'し': 'shi', 'す': 'su',  'せ': 'se', 'そ': 'so',
+              'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+              'な': 'na', 'に': 'ni',  'ぬ': 'nu',  'ね': 'ne', 'の': 'no',
+              'は': 'ha', 'ひ': 'hi',  'ふ': 'fu',  'へ': 'he', 'ほ': 'ho',
+              'ま': 'ma', 'み': 'mi',  'む': 'mu',  'め': 'me', 'も': 'mo',
+              'や': 'ya', 'ゆ': 'yu',  'よ': 'yo',  'ら': 'ra', 'り': 'ri',
+              'る': 'ru', 'れ': 're',  'ろ': 'ro',  'わ': 'wa', 'を': 'wo',
+              'ん': 'n',
+              // Katakana
+              'ア': 'a',  'イ': 'i',   'ウ': 'u',   'エ': 'e',  'オ': 'o',
+              'カ': 'ka', 'キ': 'ki',  'ク': 'ku',  'ケ': 'ke', 'コ': 'ko',
+              'サ': 'sa', 'シ': 'shi', 'ス': 'su',  'セ': 'se', 'ソ': 'so',
+              'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
+              'ナ': 'na', 'ニ': 'ni',  'ヌ': 'nu',  'ネ': 'ne', 'ノ': 'no',
+              'ハ': 'ha', 'ヒ': 'hi',  'フ': 'fu',  'ヘ': 'he', 'ホ': 'ho',
+              'マ': 'ma', 'ミ': 'mi',  'ム': 'mu',  'メ': 'me', 'モ': 'mo',
+              'ヤ': 'ya', 'ユ': 'yu',  'ヨ': 'yo',  'ラ': 'ra', 'リ': 'ri',
+              'ル': 'ru', 'レ': 're',  'ロ': 'ro',  'ワ': 'wa', 'ヲ': 'wo',
+              'ン': 'n',
+              // 濁音
+              'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
+              'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
+              'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
+              'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+              // Katakana
+              'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
+              'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
+              'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
+              'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo'
+            };
+
+            var englishOutput = '';
+            for (var i = 0; i < japaneseInput.length; i++) {
+                englishOutput += (conversionMap[japaneseInput[i]] || japaneseInput[i]) + ' ';
+            }
+            document.getElementById('englishOutput').innerText = englishOutput;
+            window.scrollTo({
+                top: document.documentElement.scrollHeight, 
+                behavior: 'smooth' 
+            });
+        }
   </script>
   <style>
     .custom-button {
@@ -41,7 +93,11 @@
     }
 </style>
 </head>
-<body>
+<body class="is-preload">
+  <header id="header">
+    <h1 id="logo"><a href="index.html">Jerry</a></h1>
+  </header>    
+  <br><br><br>
   <h1>日文50音輸入小工具</h1>
   
   <div>
@@ -50,73 +106,80 @@
     <button onclick="outputCharacter('う', 'ウ','u')" class="custom-button">う ウ u</button>
     <button onclick="outputCharacter('え', 'エ','e')" class="custom-button">え エ e</button>
     <button onclick="outputCharacter('お', 'オ','o')" class="custom-button">お オ o</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('か', 'カ','ka')" class="custom-button">か カ ka</button>
     <button onclick="outputCharacter('き', 'キ','ki')" class="custom-button">き キ ki</button>
     <button onclick="outputCharacter('く', 'ク','ku')" class="custom-button">く ク ku</button>
     <button onclick="outputCharacter('け', 'ケ','ke')" class="custom-button">け ケ ke</button>
     <button onclick="outputCharacter('こ', 'コ','ko')" class="custom-button">こ コ ko</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('さ', 'サ','sa')" class="custom-button">さ サ sa</button>
     <button onclick="outputCharacter('し', 'シ','shi')" class="custom-button">し シ shi</button>
     <button onclick="outputCharacter('す', 'ス','su')" class="custom-button">す ス su</button>
     <button onclick="outputCharacter('せ', 'セ','se')" class="custom-button">せ セ se</button>
     <button onclick="outputCharacter('そ', 'ソ','so')" class="custom-button">そ ソ so</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('た', 'タ','ta')" class="custom-button">た タ ta</button>
     <button onclick="outputCharacter('ち', 'チ','chi')" class="custom-button">ち チ chi</button>
     <button onclick="outputCharacter('つ', 'ツ','tsu')" class="custom-button">つ ツ tsu</button>
     <button onclick="outputCharacter('て', 'テ','te')" class="custom-button">て テ te</button>
     <button onclick="outputCharacter('と', 'ト','to')" class="custom-button">と ト to</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('な', 'ナ','na')" class="custom-button">な ナ na</button>
     <button onclick="outputCharacter('に', 'ニ','ni')" class="custom-button">に ニ ni</button>
     <button onclick="outputCharacter('ぬ', 'ヌ','nu')" class="custom-button">ぬ ヌ nu</button>
     <button onclick="outputCharacter('ね', 'ネ','ne')" class="custom-button">ね ネ ne</button>
     <button onclick="outputCharacter('の', 'ノ','no')" class="custom-button">の ノ no</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('は', 'ハ','ha')" class="custom-button">は ハ ha</button>
     <button onclick="outputCharacter('ひ', 'ヒ','hi')" class="custom-button">ひ ヒ hi</button>
     <button onclick="outputCharacter('ふ', 'フ','fu')" class="custom-button">ふ フ fu</button>
     <button onclick="outputCharacter('へ', 'ヘ','he')" class="custom-button">へ ヘ he</button>
     <button onclick="outputCharacter('ほ', 'ホ','ho')" class="custom-button">ほ ホ ho</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('ま', 'マ','ma')" class="custom-button">ま マ ma</button>
     <button onclick="outputCharacter('み', 'ミ','mi')" class="custom-button">み ミ mi</button>
     <button onclick="outputCharacter('む', 'ム','mu')" class="custom-button">む ム mu</button>
     <button onclick="outputCharacter('め', 'メ','me')" class="custom-button">め メ me</button>
     <button onclick="outputCharacter('も', 'モ','mo')" class="custom-button">も モ mo</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('や', 'ヤ','ya')" class="custom-button">や ヤ ya</button>
     <span class="space"></span>
     <button onclick="outputCharacter('ゆ', 'ユ','yu')" class="custom-button">ゆ ユ yu</button>
     <span class="space"></span>
     <button onclick="outputCharacter('よ', 'ヨ','yo')" class="custom-button">よ ヨ yo</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('ら', 'ラ','ra')" class="custom-button">ら ラ ra</button>
     <button onclick="outputCharacter('り', 'リ','ri')" class="custom-button">り リ ri</button>
     <button onclick="outputCharacter('る', 'ル','ru')" class="custom-button">る ル ru</button>
     <button onclick="outputCharacter('れ', 'レ','re')" class="custom-button">れ レ re</button>
     <button onclick="outputCharacter('ろ', 'ロ','ro')" class="custom-button">ろ ロ ro</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('わ', 'ワ','wa')" class="custom-button">わ ワ wa</button>
     <span class="space"></span>
     <span class="space"></span>
     <span class="space"></span>
     <button onclick="outputCharacter('を', 'ヲ','wo')" class="custom-button">を ヲ wo</button>
-    <br><br>
+    <br>
     <button onclick="outputCharacter('ん', 'ン','n')" class="custom-button">ん ン n</button>
 	<br><br>
   </div>
   
   <div>
-    <h2>輸出:</h2>
+    <h1>輸出:</h1>
     <button onclick="searchOnGoogle()">搜尋翻譯</button>
     <button onclick="clearOutput()">清除輸出</button>
     <div id="output" class="result"></div>
     <div id="outputKata" class="result"></div>
-	<div id="outputEng" class="result"></div>
-  
+	  <div id="outputEng" class="result"></div>
+  <hr>
+  <h1>輸入日文50音:</h1>
+    <input type="text" id="japaneseInput">
+    <button onclick="convertToEnglish()">Convert</button>
+    <div>
+        <h1>英文輸出:</h1>
+        <div id="englishOutput" class="result"></div>
+    </div>
   </div>
 </body>
 </html>
