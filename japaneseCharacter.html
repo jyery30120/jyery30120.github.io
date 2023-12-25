@@ -7,33 +7,8 @@
 	<link rel="stylesheet" href="assets/css/main.css" />
 	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
   <script>
-    function outputCharacter(japaneseCharacter, Katakana, englishEquivalent) {
-      var outputDiv = document.getElementById('output');
-	    var outputDivEng = document.getElementById('outputEng');
-      var outputDivKata = document.getElementById('outputKata');
-      outputDiv.innerHTML += `${japaneseCharacter}`;
-	    outputDivEng.innerHTML += `${englishEquivalent}`;
-      outputDivKata.innerHTML += `${Katakana}`;
-    }
-	
-	function searchOnGoogle() {
-      var japaneseText = document.getElementById('output').innerText;
-	  var googleSearchURL = 'https://www.google.com/search?q=' + encodeURIComponent(japaneseText + ' 翻譯');
-	  
-	  window.open(googleSearchURL, '_blank');
-    }
-    
-    function clearOutput() {
-    document.getElementById('output').innerHTML = '';
-	  document.getElementById('outputEng').innerHTML = '';
-    document.getElementById('outputKata').innerHTML = '';
-	  document.getElementById('translatedOutput').innerText = '';
-    }
-
-    function convertToEnglish() {
-            // 獲取輸入的日文五十音
-            var japaneseInput = document.getElementById('japaneseInput').value;
-            var conversionMap = {
+    var myDict = {};
+    var conversionMap = {
               'あ': 'a',  'い': 'i',   'う': 'u',   'え': 'e',  'お': 'o',
               'か': 'ka', 'き': 'ki',  'く': 'ku',  'け': 'ke', 'こ': 'ko',
               'さ': 'sa', 'し': 'shi', 'す': 'su',  'せ': 'se', 'そ': 'so',
@@ -67,9 +42,58 @@
               'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo'
             };
 
+        
+        function readTextFile(file) {
+        fetch(file)
+        .then(response => response.text())
+        .then(data => {
+          var keyValuePairs = data.replace(/\s/g, '').split(',');
+    
+          if (keyValuePairs) {
+            keyValuePairs.forEach(function(pair) {
+              var keyValue = pair.split(":");
+              var key = keyValue[0].replace(/'/g, '');
+              var value = keyValue[1].replace(/'/g, '');
+              myDict[key] = value;
+            });
+          } else {
+            console.log("No valid key-value pairs found in the file.");
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      }
+
+    function outputCharacter(japaneseCharacter, Katakana, englishEquivalent) {
+      var outputDiv = document.getElementById('output');
+	    var outputDivEng = document.getElementById('outputEng');
+      var outputDivKata = document.getElementById('outputKata');
+      outputDiv.innerHTML += `${japaneseCharacter}`;
+	    outputDivEng.innerHTML += `${englishEquivalent}`;
+      outputDivKata.innerHTML += `${Katakana}`;
+    }
+	
+	function searchOnGoogle() {
+      var japaneseText = document.getElementById('output').innerText;
+	  var googleSearchURL = 'https://www.google.com/search?q=' + encodeURIComponent(japaneseText + ' 翻譯');
+	  
+	  window.open(googleSearchURL, '_blank');
+    }
+    
+    function clearOutput() {
+    document.getElementById('output').innerHTML = '';
+	  document.getElementById('outputEng').innerHTML = '';
+    document.getElementById('outputKata').innerHTML = '';
+	  document.getElementById('translatedOutput').innerText = '';
+    }
+
+    function convertToEnglish() {
+            // 獲取輸入的日文五十音
+            var japaneseInput = document.getElementById('japaneseInput').value;
+            
             var englishOutput = '';
             for (var i = 0; i < japaneseInput.length; i++) {
-                englishOutput += (conversionMap[japaneseInput[i]] || japaneseInput[i]) + ' ';
+                var tmp = japaneseInput[i];
+                englishOutput += (conversionMap[tmp] || getKenji(myDict[tmp]) || tmp) + ' ';
             }
             document.getElementById('englishOutput').innerText = englishOutput;
             window.scrollTo({
@@ -77,6 +101,22 @@
                 behavior: 'smooth' 
             });
         }
+
+    function getKenji(kenji){
+      var s = '';
+      if(!kenji){
+        return kenji;
+      }
+      for (var i = 0; i < kenji.length; i++) {
+        s += conversionMap[kenji[i]] || kenji[i]
+      }
+      return s;
+    }    
+
+  window.onload = function() {
+    readTextFile('https://raw.githubusercontent.com/jyery30120/jyery30120.github.io/master/japanword.txt');
+  };
+
   </script>
   <style>
     .custom-button {
@@ -173,7 +213,7 @@
     <div id="outputKata" class="result"></div>
 	  <div id="outputEng" class="result"></div>
   <hr>
-  <h1>輸入日文50音:</h1>
+  <h1>輸入日文:</h1>
     <input type="text" id="japaneseInput">
     <button onclick="convertToEnglish()">Convert</button>
     <div>
