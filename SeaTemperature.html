@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaflet Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+  <style>
+    #map {
+      height: 800px;
+      margin-top: 70px;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background-color: black;
+    }
+
+    .leaflet-popup-content {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header id="header">
+    <h1 id="logo"><a href="index.html">Jerry</a></h1>
+  </header>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    // var map = L.map('map').setView([25.096110, 121.9233], 7); 
+    var map = L.map('map').setView([25.096110, 121.9233], 12); 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    $.ajax({
+    url: 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-B0075-001?Authorization=rdec-key-123-45678-011121314', 
+    type: 'GET',
+    dataType: 'json',
+    success: function(data) {
+      processData(data,"46714D","小琉球浮標",22.316660,120.375000);
+      processData(data,"C4S01","蘭嶼潮位站",22.057500,121.507770);
+      processData(data,"C4A05","福隆潮位站",25.021380,121.949720);
+      processData(data,"46694A","龍洞浮標",25.096110,121.9233);
+    },
+    error: function(xhr, status, error) {
+      console.error('Failed to fetch data:', error);
+    }
+  });
+
+  function processData(data,stationID,stationName,latitude,longitude) {
+    var filteredData = [];
+
+      data.Records.SeaSurfaceObs.Location.forEach(function(location) {
+            if (location.Station.StationID === stationID) {
+              filteredData.push(location);
+          }
+      });
+
+      var latestDateTime = null;
+      var latestData = null;
+
+      filteredData[0].StationObsTimes.StationObsTime.forEach(function(obsTime) {
+            var dateTime = new Date(obsTime.DateTime);
+            if (!latestDateTime || dateTime > latestDateTime) {
+                latestDateTime = dateTime;
+                latestData = obsTime;
+            }
+        });
+
+      var yellowIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      var greenIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      var markerIcon = latestData.WeatherElements.SeaTemperature >= 25 ? greenIcon : yellowIcon;
+
+      var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map)
+          .bindPopup(`<b>${stationName}</b><br>海溫: ${latestData.WeatherElements.SeaTemperature} (℃)
+                <br>氣溫: ${latestData.WeatherElements.Temperature} (℃)
+                <br>浪高: ${latestData.WeatherElements.WaveHeight} (m)
+                <br>風力: ${latestData.WeatherElements.PrimaryAnemometer.WindSpeed} (m/s) (${latestData.WeatherElements.PrimaryAnemometer.WindScale}級)`);
+
+      if (stationID === "46694A") {
+          marker.openPopup();
+      } 
+  }
+  </script>
+</body>
+</html>
