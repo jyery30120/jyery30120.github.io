@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>複利計算器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>   
+</head>
+<body>
+    <header id="header">
+        <h1 id="logo"><a href="index.html">Jerry</a></h1>
+    </header>  
+    <br><br>
+    <h2>複利計算器</h2>
+    <input type="text" id="initial" placeholder="初始投資金額">
+    <br>
+    <input type="text" id="monthly" placeholder="每月加碼金額">
+    <br>
+    <input type="text" id="rate" placeholder="年利率">
+    <br>
+    <input type="text" id="years" placeholder="投資年數">
+    <br>
+    <input type="submit" value="計算"  class="calculateButton">
+    <h2>本金: <span id="principal"></span></h2>
+    <h2>最終資產: <span id="result"></span></h2>
+    <h2>報酬率: <span id="roi"></span></h2>
+    <canvas id="myChart"></canvas>
+
+    <script>
+        let chart;
+        let btnClick =document.querySelector('.calculateButton');
+        function calculate() {
+            const test = document.getElementById('initial').value;
+            const initial = parseFloat(document.getElementById('initial').value.replace(/,/g, ''));
+            const monthly = parseFloat(document.getElementById('monthly').value.replace(/,/g, ''));
+            const rate = parseFloat(document.getElementById('rate').value) / 100 / 12;
+            const years = parseFloat(document.getElementById('years').value);
+            const months = years * 12;
+            let balance = initial;
+            let totalPrincipal = initial;
+            let balances = [];
+            let principals = [];
+
+            for (let i = 0; i < months; i++) {
+                balance = balance * (1 + rate) + monthly;
+                totalPrincipal += monthly;
+                balances.push(balance);
+                principals.push(totalPrincipal);
+            }
+
+            document.getElementById('result').innerText = toThousands(balance.toFixed(0));
+            document.getElementById('principal').innerText = toThousands(totalPrincipal.toFixed(0));
+            document.getElementById('roi').innerText = (((balance - totalPrincipal) / totalPrincipal) * 100).toFixed(0) + '%'
+            drawChart(balances, principals);
+        }
+        btnClick.addEventListener('click',function() {calculate()});
+
+        function toThousands(num) {
+            var result = [ ], counter = 0;
+            num = (num || 0).toString().split('');
+            for (var i = num.length - 1; i >= 0; i--) {
+                counter++;
+                result.unshift(num[i]);
+                if (!(counter % 3) && i != 0) { result.unshift(','); }
+            }
+            return result.join('');
+        }
+
+        function drawChart(balances, principals) {
+
+            if (chart) {
+                chart.destroy(); // 销毁旧图表
+            }
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: balances.length }, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: '資產變化',
+                            data: balances,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            fill: false
+                        },
+                        {
+                            label: '累積投入本金',
+                            data: principals,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '月份'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)' // 設定x軸網格顏色
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '金額 (元)'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)' // 設定x軸網格顏色
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        let lastValue = "";
+        function formatNumber(input) {
+            let value = input.value;
+            if (value === '') {
+                lastValue = '';
+                return;
+            }
+            value = value.replace(/\D/g, '');
+            if (value === lastValue) {
+                return;
+            }
+            lastValue = value;
+            value = parseInt(value, 10).toLocaleString();
+            input.value = value;
+        }
+    </script>
+</body>
+</html>
