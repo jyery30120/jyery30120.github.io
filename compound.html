@@ -15,21 +15,29 @@
     </header>  
     <br><br>
     <h2>複利計算器</h2>
-    <input type="text" id="initial" placeholder="初始投資金額">
+    初始投資金額：<input type="text" id="initial" placeholder="初始投資金額" value=1000000>
     <br>
-    <input type="text" id="monthly" placeholder="每月加碼金額">
+    每月加碼金額：<input type="text" id="monthly" placeholder="每月加碼金額" value=10000>
     <br>
-    <input type="text" id="rate" placeholder="年利率">
+    年利率(%)：<input type="text" id="rate" placeholder="年利率(%)" value=10>
     <br>
-    <input type="text" id="years" placeholder="投資年數">
+    投資年數：<input type="text" id="years" placeholder="投資年數" value=20>
     <br>
-    <input type="submit" value="計算"  class="calculateButton">
+    <input type="submit" value="計算"  class="calculateButton" id="calculateButton">
     <h2>本金: <span id="principal"></span></h2>
     <h2>最終資產: <span id="result"></span></h2>
     <h2>報酬率: <span id="roi"></span></h2>
     <canvas id="myChart"></canvas>
 
     <script>
+        window.onload = function() {
+            // 獲取按鈕元素
+            var button = document.getElementById('calculateButton');
+            // 觸發按鈕的點擊事件
+            if (button) {
+                button.click();
+            }
+        };
         let chart;
         let btnClick =document.querySelector('.calculateButton');
         function calculate() {
