@@ -35,6 +35,27 @@
             border: 1px solid #1c1d26;
             border-top: none;
         }
+
+        table {
+            /* /* width: 100%; */
+            border-collapse: collapse;
+            margin: 0 auto; /* 居中顯示表格 */
+        }
+        th, td {
+            /* border: 1px solid white;
+            padding: 8px;
+            text-align: left; */
+            border: 1px solid white;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #1c1d26;
+        }
+        caption {
+            font-size: large;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
@@ -45,17 +66,16 @@
 
     <div class="tab">
         <button class="tablinks" onclick="openPage(event, 'calculator')">複利計算器</button>
-        <!-- <input type="submit" class="tablinks" value="複利計算器" onclick="openPage(event, 'calculator')"> -->
-        <button class="tablinks" onclick="openPage(event, 'other')">平均年化報酬率</button>
-        <!-- <input type="submit" class="tablinks" value="其他功能" onclick="openPage(event, 'other')"> -->
+        <button class="tablinks" onclick="openPage(event, 'cagrcalculator')">平均年化報酬率</button>
+        <button class="tablinks" onclick="openPage(event, 'compare')">績效對決</button>
     </div>
 
     <div id="calculator" class="tabcontent">
-        初始投資金額：<input type="text" id="initial" placeholder="初始投資金額" value=1000000 oninput="formatNumber(this)">
+        初始投資金額：<input type="text" id="initial" placeholder="初始投資金額" value=1000000 >
         <br>
-        每月加碼金額：<input type="text" id="monthly" placeholder="每月加碼金額" value=10000 oninput="formatNumber(this)">
+        每月加碼金額：<input type="text" id="monthly" placeholder="每月加碼金額" value=10000 >
         <br>
-        年利率(%)：<input type="text" id="rate" placeholder="年利率(%)" value=10>
+        年化報酬率(%)：<input type="text" id="rate" placeholder="年化報酬率(%)" value=10>
         <br>
         投資年數：<input type="text" id="years" placeholder="投資年數" value=20>
         <br>
@@ -66,35 +86,88 @@
         <canvas id="myChart"></canvas>
     </div>
 
-    <div id="other" class="tabcontent">
-        最終報酬率(%)：<input type="text" id="final" placeholder="最終報酬率(%)" value=1234 oninput="formatNumber(this)">
+    <div id="cagrcalculator" class="tabcontent">
+        最終報酬率(%)：<input type="text" id="final" placeholder="最終報酬率(%)" value=1234 >
         <br>
-        年數：<input type="text" id="yearCnt" placeholder="年數" value=10 oninput="formatNumber(this)">
+        年數：<input type="text" id="yearCnt" placeholder="年數" value=10 >
         <br>
         <input type="submit" value="計算" class="calculateCAGRButton" id="calculateCAGRButton">
         <h2>平均年化報酬率: <span id="cagr"></span></h2>
-        <canvas id="myChart"></canvas>
+        <!-- <canvas id="myChart"></canvas> -->
     </div>
 
-
-    <div id="other" class="tabcontent">
-        <h2>其他功能</h2>
-        <p>這裡可以放其他功能的內容。</p>
+    <div id="compare" class="tabcontent">
+        股票代號1：<input type="text" id="stockNo1" placeholder="股票代號1" value="0050" >
+        <br>
+        股票代號2：<input type="text" id="stockNo2" placeholder="股票代號2" value="00631L" >
+        <br>
+        開始時間：<input type="text" id="startdate" placeholder="開始時間" value="20141031" >
+        <br>
+        結束時間：<input type="text" id="enddate" placeholder="開始時間" value="00631L" >
+        <br>
+        <input type="submit" value="計算" class="compareButton" id="compareButton">
+        <table>
+            <thead>
+                <tr>
+                    <th style="text-align: center"></th>
+                    <th style="text-align: center" id="stock1">股票1</th>
+                    <th style="text-align: center" id="stock2">股票2</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>開始日期股價</td>
+                    <td id="startprice1">--</td>
+                    <td id="startprice2">--</td>
+                </tr>
+                <tr>
+                    <td>結束日期股價</td>
+                    <td id="endprice1">--</td>
+                    <td id="endprice2">--</td>
+                </tr>
+                <tr>
+                    <td>總報酬率</td>
+                    <td id="totalroi1">--</td>
+                    <td id="totalroi2">--</td>
+                </tr>
+                <tr>
+                    <td>年化報酬率</td>
+                    <td id="cagr1">--</td>
+                    <td id="cagr2">--</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+    
+
 
     <script>
         window.onload = function() {
             // 預設打開第一個頁籤
             document.querySelector('.tab button').click();
-            var button = document.getElementById('calculateButton');
-            if (button) {
-                button.click();
-            }
+            var calculateButton = document.getElementById('calculateButton');
+            var calculateCAGRButton = document.getElementById('calculateCAGRButton');
+            var compareButton = document.getElementById('compareButton');
+            calculateButton.click();
+            calculateCAGRButton.click();
+            compareButton.click();
         };
+
+        // 獲取今天的日期
+        const today = new Date();
+        // 格式化日期為 yyyy-mm-dd
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedToday = `${yyyy}${mm}${dd}`;
+
+        // 設置 input 欄位的預設值
+        document.getElementById('enddate').value = formattedToday;
 
         let chart;
         let btnClick = document.querySelector('.calculateButton');
         let btnCAGRClick = document.querySelector('.calculateCAGRButton');
+        let btnCompareClick = document.querySelector('.compareButton');
 
         function calculate() {
             const initial = parseFloat(document.getElementById('initial').value.replace(/,/g, ''));
@@ -121,16 +194,34 @@
         }
         
         function calculateCAGR() {
-        // 總報酬率轉換成倍數
-        let final = document.getElementById('final').value;
-        let totalReturnMultiplier = 1 + (document.getElementById('final').value / 100);
-        // 計算平均年化報酬率
-        let cagr = Math.pow(totalReturnMultiplier, 1 / document.getElementById('yearCnt').value) - 1;
-        document.getElementById('cagr').innerText = (cagr * 100).toFixed(2);
+            // 總報酬率轉換成倍數
+            let final = document.getElementById('final').value;
+            let totalReturnMultiplier = 1 + (document.getElementById('final').value / 100);
+            // 計算平均年化報酬率
+            let cagr = Math.pow(totalReturnMultiplier, 1 / document.getElementById('yearCnt').value) - 1;
+            document.getElementById('cagr').innerText = (cagr * 100).toFixed(2);
         }
 
         btnClick.addEventListener('click', function() { calculate(); });
         btnCAGRClick.addEventListener('click', function() { calculateCAGR(); });
+        btnCompareClick.addEventListener('click', async function() { 
+            let startdate = document.getElementById('startdate').value;
+            let stockNo1 = document.getElementById('stockNo1').value;
+            let enddate = document.getElementById('enddate').value;
+            let stockNo2 = document.getElementById('stockNo2').value;
+            const [startprice1, startprice2, endprice1, endprice2] = await Promise.all([
+                fetchStockData(startdate, stockNo1, 'startprice1'), 
+                fetchStockData(startdate, stockNo2, 'startprice2'),
+                fetchStockData(enddate, stockNo1, 'endprice1'), 
+                fetchStockData(enddate, stockNo2, 'endprice2')
+            ]);
+            document.getElementById('totalroi1').innerText = ((endprice1 - startprice1) / startprice1 * 100).toFixed(2)+ '%';
+            document.getElementById('totalroi2').innerText = ((endprice2 - startprice2) / startprice2 * 100).toFixed(2)+ '%';
+            document.getElementById('stock1').innerText = stockNo1;
+            document.getElementById('stock2').innerText = stockNo2;
+            document.getElementById('cagr1').innerText = calculateAnnualizedReturn(startdate,enddate,startprice1,endprice1);
+            document.getElementById('cagr2').innerText = calculateAnnualizedReturn(startdate,enddate,startprice2,endprice2);
+        });
 
         function toThousands(num) {
             var result = [], counter = 0;
@@ -223,6 +314,63 @@
             lastValue = value;
             value = parseInt(value, 10).toLocaleString();
             input.value = value;
+        }
+
+        async function fetchStockData(date, stockNo, elementId) {
+            const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${date.replace(/-/g, '')}&stockNo=${stockNo}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.stat === "OK" && data.data.length > 0) {
+                    const lastData = data.data[data.data.length - 1];
+                    const closingPrice = lastData[6]; // 最後一個陣列的第 7 筆資料（收盤價）
+                    document.getElementById(elementId).innerText = closingPrice;
+                    return closingPrice;
+                } else {
+                    document.getElementById(elementId).innerText = "未找到相關資料";
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById(elementId).innerText = "資料獲取失敗";
+                return null;
+            }
+        }
+
+        function formatDate(textDate) {
+            // 確保日期格式為YYYYMMDD
+            if (textDate.length !== 8) {
+                alert('Date format must be YYYYMMDD.');
+                return null;
+            }
+
+            const year = textDate.substring(0, 4);
+            const month = textDate.substring(4, 6);
+            const day = textDate.substring(6, 8);
+
+            // 月份在 JavaScript 中是從0開始的
+            return new Date(year, month - 1, day);
+        }
+
+        function calculateAnnualizedReturn(startDateText,endDateText,initialPrice,finalPrice) {
+
+            const startDate = formatDate(startDateText);
+            const endDate = formatDate(endDateText);
+
+            if (!startDate || !endDate || isNaN(initialPrice) || isNaN(finalPrice)) {
+                document.getElementById('result').innerText = "Please enter valid dates and prices.";
+                return;
+            }
+
+            const daysBetween = (endDate - startDate) / (1000 * 60 * 60 * 24);
+            const yearsBetween = daysBetween / 365.25; // 考慮閏年
+
+            const totalReturn = (finalPrice - initialPrice) / initialPrice;
+            const annualizedReturn = Math.pow(1 + totalReturn, 1 / yearsBetween) - 1;
+
+            return (annualizedReturn * 100).toFixed(2) + "%";
         }
 
     </script>
