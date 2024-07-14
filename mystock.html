@@ -20,6 +20,7 @@
                 <th>昨收</th>
                 <th>現價</th>
                 <th>庫存損益</th>
+                <th>報酬率</th>
                 <th>今日損益</th>
                 <th>漲跌幅</th>
             </tr>
@@ -39,6 +40,7 @@
                 <th>昨收</th>
                 <th>現價</th>
                 <th>庫存損益</th>
+                <th>報酬率</th>
                 <th>今日損益</th>
                 <th>漲跌幅</th>
             </tr>
@@ -58,6 +60,7 @@
                 <th>昨收</th>
                 <th>現價</th>
                 <th>庫存損益</th>
+                <th>報酬率</th>
                 <th>今日損益</th>
                 <th>漲跌幅</th>
             </tr>
@@ -108,6 +111,7 @@
                             row.insertCell(); // Placeholder for Previous Closing Price
                             row.insertCell(); // Placeholder for Closing Price
                             row.insertCell(); // Placeholder for Profit/Loss
+                            row.insertCell(); // Placeholder for Profit/Loss %
                             row.insertCell(); // Placeholder for Today's Profit/Loss
                             row.insertCell(); // Placeholder for Today's Profit/Loss %
                         }
@@ -157,18 +161,21 @@
                                     totalReturn += profitLoss;
                                     totalReturnToday += profitLossToday;
                                     const percentage = ((closingPrice - preClosingPrice) /  preClosingPrice * 100)
+                                    const returnRate = (profitLoss /  cost * 100)
 
                                     table.rows[i].cells[3].textContent = preClosingPrice.toFixed(2);
                                     table.rows[i].cells[4].textContent = closingPrice.toFixed(2);
                                     table.rows[i].cells[5].textContent = profitLoss.toFixed(2);
-                                    table.rows[i].cells[6].textContent = profitLossToday.toFixed(0);
-                                    table.rows[i].cells[7].textContent = percentage.toFixed(2) + '%';
+                                    table.rows[i].cells[6].textContent = returnRate.toFixed(2) + '%';
+                                    table.rows[i].cells[7].textContent = profitLossToday.toFixed(0);
+                                    table.rows[i].cells[8].textContent = percentage.toFixed(2) + '%';
                                 } else {
                                     table.rows[i].cells[3].textContent = 'No Data';
                                     table.rows[i].cells[4].textContent = 'No Data';
                                     table.rows[i].cells[5].textContent = 'No Data';
                                     table.rows[i].cells[6].textContent = 'No Data';
                                     table.rows[i].cells[7].textContent = 'No Data';
+                                    table.rows[i].cells[8].textContent = 'No Data';
                                 }
                             }
                             document.getElementById(totalReturnId).innerText = `庫存損益: ${totalReturn.toFixed(2)} 日損益: ${totalReturnToday.toFixed(0)}`;
