@@ -7,6 +7,7 @@
 </head>
 <body>
     <h1>我的台股庫存資訊</h1>
+    <h2><span id="finalReturn"></span></h2>
     <h2><span id="allReturn"></span></h2>
     <h2>本帳</h2>
     <h2><span id="totalReturn"></span><span id="realized"></span></span></h2>
@@ -17,9 +18,10 @@
                 <th>庫存量</th>
                 <th>成本</th>
                 <th>昨收</th>
-                <th>收盤價</th>
+                <th>現價</th>
                 <th>庫存損益</th>
-                <th>日損益</th>
+                <th>今日損益</th>
+                <th>漲跌幅</th>
             </tr>
         </thead>
         <tbody>
@@ -35,9 +37,10 @@
                 <th>庫存量</th>
                 <th>成本</th>
                 <th>昨收</th>
-                <th>收盤價</th>
+                <th>現價</th>
                 <th>庫存損益</th>
-                <th>日損益</th>
+                <th>今日損益</th>
+                <th>漲跌幅</th>
             </tr>
         </thead>
         <tbody>
@@ -53,9 +56,10 @@
                 <th>庫存量</th>
                 <th>成本</th>
                 <th>昨收</th>
-                <th>收盤價</th>
+                <th>現價</th>
                 <th>庫存損益</th>
-                <th>日損益</th>
+                <th>今日損益</th>
+                <th>漲跌幅</th>
             </tr>
         </thead>
         <tbody>
@@ -105,6 +109,7 @@
                             row.insertCell(); // Placeholder for Closing Price
                             row.insertCell(); // Placeholder for Profit/Loss
                             row.insertCell(); // Placeholder for Today's Profit/Loss
+                            row.insertCell(); // Placeholder for Today's Profit/Loss %
                         }
                     }
                 };
@@ -151,16 +156,19 @@
                                     const profitLossToday = (closingPrice - preClosingPrice) * nums;
                                     totalReturn += profitLoss;
                                     totalReturnToday += profitLossToday;
+                                    const percentage = ((closingPrice - preClosingPrice) /  preClosingPrice * 100)
 
                                     table.rows[i].cells[3].textContent = preClosingPrice.toFixed(2);
                                     table.rows[i].cells[4].textContent = closingPrice.toFixed(2);
                                     table.rows[i].cells[5].textContent = profitLoss.toFixed(2);
                                     table.rows[i].cells[6].textContent = profitLossToday.toFixed(0);
+                                    table.rows[i].cells[7].textContent = percentage.toFixed(2) + '%';
                                 } else {
                                     table.rows[i].cells[3].textContent = 'No Data';
                                     table.rows[i].cells[4].textContent = 'No Data';
                                     table.rows[i].cells[5].textContent = 'No Data';
                                     table.rows[i].cells[6].textContent = 'No Data';
+                                    table.rows[i].cells[7].textContent = 'No Data';
                                 }
                             }
                             document.getElementById(totalReturnId).innerText = `庫存損益: ${totalReturn.toFixed(2)} 日損益: ${totalReturnToday.toFixed(0)}`;
@@ -173,7 +181,8 @@
                         updateTable(table3, stocksData3, 'totalReturn3');
 
                         const totalRealized = parseFloat(realizedValues[0]) + parseFloat(realizedValues[1]);
-                        document.getElementById("allReturn").innerText = `庫存損益: ${allReturn.toFixed(2)} 日損益: ${allReturnToday.toFixed(0)} 已實現: (${totalRealized})`;
+                        document.getElementById("allReturn").innerText = `庫存損益: ${allReturn.toFixed(2)} 日損益: ${allReturnToday.toFixed(0)} (已實現: ${totalRealized})`;
+                        document.getElementById("finalReturn").innerText = `台股總損益: ${(allReturn + totalRealized).toFixed(2)} `;
                     })
                     .catch(error => console.error('Error fetching stock data:', error));
             });
