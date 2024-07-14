@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Data Table</title>
+</head>
+<body>
+    <h1>我的股票庫存資訊</h1>
+    <h2><span id="allReturn"></span></h2>
+    <h2>本帳</h2>
+    <h2><span id="totalReturn"></span></h2>
+    <table id="stockTable" border="1">
+        <thead>
+            <tr>
+                <th>股票代號</th>
+                <th>庫存量</th>
+                <th>成本</th>
+                <th>昨收</th>
+                <th>收盤價</th>
+                <th>庫存損益</th>
+                <th>日損益</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <h2>lb信貸</h2>
+    <h2><span id="totalReturn2"></span></h2>
+    <table id="stockTable2" border="1">
+        <thead>
+            <tr>
+                <th>股票代號</th>
+                <th>庫存量</th>
+                <th>成本</th>
+                <th>昨收</th>
+                <th>收盤價</th>
+                <th>庫存損益</th>
+                <th>日損益</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fetchCSV = url => fetch(url).then(response => response.text());
+            let allReturn = 0;
+            let allReturnToday = 0;
+
+            Promise.all([
+                fetchCSV('https://raw.githubusercontent.com/jyery30120/jyery30120.github.io/master/mystock.csv'),
+                fetchCSV('https://raw.githubusercontent.com/jyery30120/jyery30120.github.io/master/mystock_lb.csv')
+            ])
+            .then(([data1, data2]) => {
+                const table1 = document.getElementById('stockTable').getElementsByTagName('tbody')[0];
+                const table2 = document.getElementById('stockTable2').getElementsByTagName('tbody')[0];
+                const stockNos = [];
+                const stocksData1 = [];
+                const stocksData2 = [];
+
+                const processCSV = (data, table, stocksData) => {
+                    const rows = data.split('\n');
+                    for (let i = 1; i < rows.length; i++) {
+                        const cells = rows[i].split(',');
+                        if (cells.length === 3) {
+                            const stock = {
+                                stockNo: cells[0],
+                                nums: parseFloat(cells[1]),
+                                cost: parseFloat(cells[2])
+                            };
+                            stocksData.push(stock);
+                            stockNos.push(cells[0]);
+
+                            const row = table.insertRow();
+                            for (let j = 0; j < cells.length; j++) {
+                                const cell = row.insertCell();
+                                cell.textContent = cells[j];
+                            }
+                            row.insertCell(); // Placeholder for Previous Closing Price
+                            row.insertCell(); // Placeholder for Closing Price
+                            row.insertCell(); // Placeholder for Profit/Loss
+                            row.insertCell(); // Placeholder for Today's Profit/Loss
+                        }
+                    }
+                };
+
+                processCSV(data1, table1, stocksData1);
+                processCSV(data2, table2, stocksData2);
+
+                const apiURL = `https://script.google.com/macros/s/AKfycbzQY2NbyEVwbxlnMJQX-QDkWWtSgRlJzWbBV1GiEHSI29EsGfVD7HWgc5hdw20Kzp-zSA/exec?stockID=${stockNos.map(stockNo => 'tse_' + stockNo + '.tw').join('|')}`;
+
+                fetch(apiURL)
+                    .then(response => response.json())
+                    .then(stockData => {
+                        const stockInfoMap = new Map();
+                        stockData.msgArray.forEach(info => {
+                            stockInfoMap.set(info.c, info);
+                        });
+
+                        const updateTable = (table, stocksData, totalReturnId) => {
+                            let totalReturn = 0;
+                            let totalReturnToday = 0;
+
+                            for (let i = 0; i < table.rows.length; i++) {
+                                const stockNo = table.rows[i].cells[0].textContent;
+                                const stockInfo = stockInfoMap.get(stockNo);
+                                if (stockInfo) {
+                                    const closingPrice = parseFloat(stockInfo.z);
+                                    const preClosingPrice = parseFloat(stockInfo.y);
+                                    const nums = stocksData[i].nums;
+                                    const cost = stocksData[i].cost;
+                                    const profitLoss = closingPrice * nums * 0.9986 - cost;
+                                    const profitLossToday = (closingPrice - preClosingPrice) * nums;
+                                    totalReturn += profitLoss;
+                                    totalReturnToday += profitLossToday;
+
+                                    table.rows[i].cells[3].textContent = preClosingPrice.toFixed(2);
+                                    table.rows[i].cells[4].textContent = closingPrice.toFixed(2);
+                                    table.rows[i].cells[5].textContent = profitLoss.toFixed(2);
+                                    table.rows[i].cells[6].textContent = profitLossToday.toFixed(0);
+                                } else {
+                                    table.rows[i].cells[3].textContent = 'No Data';
+                                    table.rows[i].cells[4].textContent = 'No Data';
+                                    table.rows[i].cells[5].textContent = 'No Data';
+                                    table.rows[i].cells[6].textContent = 'No Data';
+                                }
+                            }
+                            document.getElementById(totalReturnId).innerText = `庫存損益: ${totalReturn.toFixed(2)} 日損益: ${totalReturnToday.toFixed(0)}`;
+                            allReturn = allReturn + totalReturn;
+                            allReturnToday = allReturnToday + totalReturnToday;
+                        };
+
+                        updateTable(table1, stocksData1, 'totalReturn');
+                        updateTable(table2, stocksData2, 'totalReturn2');
+
+                        document.getElementById("allReturn").innerText = `總損益: ${allReturn.toFixed(2)} 日損益: ${allReturnToday.toFixed(0)}`;
+                    })
+                    .catch(error => console.error('Error fetching stock data:', error));
+            });
+        });
+    </script>
+</body>
+</html>
