@@ -93,7 +93,6 @@
         <br>
         <input type="submit" value="計算" class="calculateCAGRButton" id="calculateCAGRButton">
         <h2>平均年化報酬率: <span id="cagr"></span></h2>
-        <!-- <canvas id="myChart"></canvas> -->
     </div>
 
     <div id="compare" class="tabcontent">
@@ -137,6 +136,11 @@
                 </tr>
             </tbody>
         </table>
+        <br><br>
+        近期股價變化：
+        <div style="width:100%; margin: auto;">
+            <canvas id="myChart2"></canvas>
+        </div>
     </div>
     
 
@@ -165,9 +169,13 @@
         document.getElementById('enddate').value = formattedToday;
 
         let chart;
+        let chart2;
         let btnClick = document.querySelector('.calculateButton');
         let btnCAGRClick = document.querySelector('.calculateCAGRButton');
         let btnCompareClick = document.querySelector('.compareButton');
+        let labels = [];
+        let stockNoChart = [];
+        let closingPrices = [];
 
         function calculate() {
             const initial = parseFloat(document.getElementById('initial').value.replace(/,/g, ''));
@@ -179,6 +187,7 @@
             let totalPrincipal = initial;
             let balances = [];
             let principals = [];
+            
 
             for (let i = 0; i < months; i++) {
                 balance = balance * (1 + rate) + monthly;
@@ -209,6 +218,9 @@
             let stockNo1 = document.getElementById('stockNo1').value;
             let enddate = document.getElementById('enddate').value;
             let stockNo2 = document.getElementById('stockNo2').value;
+            labels = [];
+            stockNoChart = [];
+            closingPrices = [];
             const [startprice1, startprice2, endprice1, endprice2] = await Promise.all([
                 fetchStockData(startdate, stockNo1, 'startprice1'), 
                 fetchStockData(startdate, stockNo2, 'startprice2'),
@@ -221,6 +233,7 @@
             document.getElementById('stock2').innerText = stockNo2;
             document.getElementById('cagr1').innerText = calculateAnnualizedReturn(startdate,enddate,startprice1,endprice1);
             document.getElementById('cagr2').innerText = calculateAnnualizedReturn(startdate,enddate,startprice2,endprice2);
+            drawChart2(labels, stockNoChart, closingPrices);
         });
 
         function toThousands(num) {
@@ -327,6 +340,11 @@
                     const lastData = data.data[data.data.length - 1];
                     const closingPrice = lastData[6]; // 最後一個陣列的第 7 筆資料（收盤價）
                     document.getElementById(elementId).innerText = closingPrice;
+                    if(elementId.includes("endprice")){
+                        labels.push(data.data.map(item => item[0].replace('113/', '')));
+                        closingPrices.push(data.data.map(item => parseFloat(item[6])));
+                        stockNoChart.push(stockNo)
+                    }
                     return closingPrice;
                 } else {
                     document.getElementById(elementId).innerText = "未找到相關資料";
@@ -373,6 +391,61 @@
             return (annualizedReturn * 100).toFixed(2) + "%";
         }
 
+        function drawChart2(labels, stockNoChart, closingPrices){
+            if (chart2) {
+                chart2.destroy(); // 銷毀舊圖表
+            }
+            const ctx2 = document.getElementById('myChart2').getContext('2d');
+            ctx2.canvas.width = '100%'; // Resetting the canvas width
+            // ctx2.canvas.height = 'auto'; // You can adjust this based on your layout needs
+
+            chart2 = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels[0],
+                    datasets: [{
+                        label: stockNoChart[0],
+                        data: closingPrices[0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }
+                    ,
+                    {
+                        label: stockNoChart[1],
+                        data: closingPrices[1],
+                        backgroundColor: 'rgba(255, 99, 132, 1)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)' 
+                            },
+                            ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20, // Adjust according to the actual data count
+                            stepSize: 5
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)' 
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
     </script>
 </body>
 </html>
+
