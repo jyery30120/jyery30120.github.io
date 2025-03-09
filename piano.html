@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鋼琴鍵盤與視譜練習</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .piano-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+        
+        .piano {
+            display: flex;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        .key {
+            position: relative;
+            width: 40px;
+            height: 180px;
+            border: 1px solid #000;
+            border-radius: 0 0 5px 5px;
+            background-color: white;
+            margin: 0 1px;
+            box-shadow: 0 5px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 8px;
+            user-select: none;
+            font-size: 12px;
+        }
+        
+        .key.black {
+            position: absolute;
+            width: 24px;
+            height: 110px;
+            background-color: black;
+            color: white;
+            z-index: 1;
+            font-size: 10px;
+        }
+        
+        .key:active, .key.active {
+            background-color: #eee;
+        }
+        
+        .key.black:active, .key.black.active {
+            background-color: #333;
+        }
+        
+        .key.highlight {
+            background-color: #90EE90;
+        }
+        
+        .key.black.highlight {
+            background-color: #006400;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .sheet-music {
+            width: 300px;
+            height: 200px;
+            background-color: white;
+            border: 1px solid #ccc;
+            margin: 20px auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 0;
+        }
+        
+        .staff-line {
+            height: 2px;
+            background-color: black;
+            width: 100%;
+			position: absolute; /* Add this to enable top positioning */
+            left: 0; /* Ensure the line starts from the left edge */
+        }
+        
+        .note {
+            width: 33px;
+            height: 22px;
+            background-color: black;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .ledger-line {
+            height: 4px;
+            background-color: black;
+            width: 50px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .clef {
+            position: absolute;
+            left: 10px;
+            font-size: 120px;
+            line-height: 0;
+        }
+        
+        .treble-clef {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .practice-controls {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .score-display {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .feedback {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            height: 20px;
+        }
+        
+        .feedback.correct {
+            color: green;
+        }
+        
+        .feedback.incorrect {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <br><br>
+    <div class="container">
+        <h1>鋼琴鍵盤與視譜練習</h1>
+        
+        <div class="sheet-music">
+            <!-- 高音譜號 -->
+            <div class="clef treble-clef">𝄞</div>
+            
+            <!-- 五線譜 -->
+            <div class="staff-line" style="top: 30%;"></div>
+            <div class="staff-line" style="top: 40%;"></div>
+            <div class="staff-line" style="top: 50%;"></div>
+            <div class="staff-line" style="top: 60%;"></div>
+            <div class="staff-line" style="top: 70%;"></div>
+            
+            <!-- 音符將由JavaScript動態生成 -->
+        </div>
+        
+        <div class="practice-controls">
+            <button id="start-practice">開始練習</button>
+            <button id="new-note">新音符</button>
+        </div>
+        
+        <div class="score-display">分數: 0</div>
+        <div class="feedback"></div>
+        
+        <div class="piano-wrapper">
+            <div class="piano">
+                <!-- 第一個八度 (C3 - B3) -->
+                <div class="key" data-note="C3">C3</div>
+				<div class="key black" data-note="Db3" style="left: 27px;">C#3</div>
+				<div class="key" data-note="D3">D3</div>
+				<div class="key black" data-note="Eb3" style="left: 75px;">D#3</div>
+				<div class="key" data-note="E3">E3</div>
+				<div class="key" data-note="F3">F3</div>
+				<div class="key black" data-note="Gb3" style="left: 160px;">F#3</div>
+				<div class="key" data-note="G3">G3</div>
+				<div class="key black" data-note="Ab3" style="left: 205px;">G#3</div>
+				<div class="key" data-note="A3">A3</div>
+				<div class="key black" data-note="Bb3" style="left: 250px;">A#3</div>
+				<div class="key" data-note="B3">B3</div>
+                
+                <!-- 第二個八度 (C4 - B4) -->
+                <div class="key" data-note="C4">C4</div>
+				<div class="key black" data-note="Db4" style="left: 335px;">C#4</div>
+				<div class="key" data-note="D4">D4</div>
+				<div class="key black" data-note="Eb4" style="left: 385px;">D#4</div>
+				<div class="key" data-note="E4">E4</div>
+				<div class="key" data-note="F4">F4</div>
+				<div class="key black" data-note="Gb4" style="left: 465px;">F#4</div>
+				<div class="key" data-note="G4">G4</div>
+				<div class="key black" data-note="Ab4" style="left: 510px;">G#4</div>
+				<div class="key" data-note="A4">A4</div>
+				<div class="key black" data-note="Bb4" style="left: 560px;">A#4</div>
+				<div class="key" data-note="B4">B4</div>
+                
+                <!-- 第三個八度 (C5 - B5) -->
+                <div class="key" data-note="C5">C5</div>
+				<div class="key black" data-note="Db5" style="left: 645px;">C#5</div>
+				<div class="key" data-note="D5">D5</div>
+				<div class="key black" data-note="Eb5" style="left: 690px;">D#5</div>
+				<div class="key" data-note="E5">E5</div>
+				<div class="key" data-note="F5">F5</div>
+				<div class="key black" data-note="Gb5" style="left: 780px;">F#5</div>
+				<div class="key" data-note="G5">G5</div>
+				<div class="key black" data-note="Ab5" style="left: 825px;">G#5</div>
+				<div class="key" data-note="A5">A5</div>
+				<div class="key black" data-note="Bb5" style="left: 868px;">A#5</div>
+				<div class="key" data-note="B5">B5</div>
+            </div>
+        </div>
+        <div class="controls">
+            <p>點擊琴鍵播放聲音，或使用鍵盤按鍵控制</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 居中鋼琴鍵盤
+            function centerPiano() {
+                const pianoWrapper = document.querySelector('.piano-wrapper');
+                const piano = document.querySelector('.piano');
+                
+                // 確保鋼琴鍵盤水平居中
+                const wrapperWidth = pianoWrapper.offsetWidth;
+                const pianoWidth = piano.offsetWidth;
+                
+                if (pianoWidth < wrapperWidth) {
+                    piano.style.marginLeft = 'auto';
+                    piano.style.marginRight = 'auto';
+                } else {
+                    piano.style.marginLeft = '0';
+                    piano.style.marginRight = '0';
+                }
+            }
+            
+            // 頁面加載時居中鋼琴
+            centerPiano();
+            
+            // 窗口大小改變時重新居中
+            window.addEventListener('resize', centerPiano);
+            
+            // 建立音頻上下文
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 聲音頻率映射表 (從 C3 到 B5)
+            const noteFrequency = {
+                // 第一個八度 (C3 - B3)
+                'C3': 130.81,
+                'Db3': 138.59,
+                'D3': 146.83,
+                'Eb3': 155.56,
+                'E3': 164.81,
+                'F3': 174.61,
+                'Gb3': 185.00,
+                'G3': 196.00,
+                'Ab3': 207.65,
+                'A3': 220.00,
+                'Bb3': 233.08,
+                'B3': 246.94,
+                
+                // 第二個八度 (C4 - B4)
+                'C4': 261.63,
+                'Db4': 277.18,
+                'D4': 293.66,
+                'Eb4': 311.13,
+                'E4': 329.63,
+                'F4': 349.23,
+                'Gb4': 369.99,
+                'G4': 392.00,
+                'Ab4': 415.30,
+                'A4': 440.00,
+                'Bb4': 466.16,
+                'B4': 493.88,
+                
+                // 第三個八度 (C5 - B5)
+                'C5': 523.25,
+                'Db5': 554.37,
+                'D5': 587.33,
+                'Eb5': 622.25,
+                'E5': 659.26,
+                'F5': 698.46,
+                'Gb5': 739.99,
+                'G5': 783.99,
+                'Ab5': 830.61,
+                'A5': 880.00,
+                'Bb5': 932.33,
+                'B5': 987.77
+            };
+            
+            // 五線譜上的音符位置 (僅適用於C, D, E, F, G, A, B自然音)
+            const notePositions = {
+                'C4': 182, // 中央C (五線譜下第一條加線)
+                'D4': 170,
+                'E4': 158, // 第一線
+                'F4': 146,
+                'G4': 134, // 第二線
+                'A4': 122,
+                'B4': 110, // 第三線
+                'C5': 98,
+                'D5': 86, // 第四線
+                'E5': 74,
+                'F5': 62,  // 第五線
+                'G5': 50,
+                'A5': 38,
+                'B5': 26
+            };
+            
+            // 五線譜相關變量
+            let currentNote = null;
+            let score = 0;
+            let practiceActive = false;
+            
+            // 檢查是否需要加線
+            function needsLedgerLine(notePosition) {
+                // 超出五線譜範圍的音符需要加線
+                return notePosition >= 180 || notePosition <= 38;
+            }
+            
+            // 獲取加線的位置
+            function getLedgerLinePositions(notePosition) {
+                const positions = [];
+                
+                // 低音部分 (五線譜下方)
+                if (notePosition >= 180) {
+                    for (let pos = 180; pos <= notePosition; pos += 20) {
+                        positions.push(pos + 11);
+                    }
+                }
+                
+                // 高音部分 (五線譜上方)
+				console.log("pos=" + notePosition) 
+                if (notePosition <= 38) { 
+                    for (let pos = 38; pos >= notePosition; pos -= 20) {
+                        positions.push(pos + 9);
+                    }
+                }
+                
+                return positions;
+            }
+            
+            // 生成隨機音符
+            function generateRandomNote() {
+                // 僅從白鍵音符中選擇 (C, D, E, F, G, A, B)
+                const whiteNotes = Object.keys(notePositions);
+                const randomIndex = Math.floor(Math.random() * whiteNotes.length);
+                return whiteNotes[randomIndex];
+            }
+            
+            // 顯示音符在五線譜上
+            function displayNote(note) {
+                // 清除之前的音符
+                const existingNote = document.querySelector('.note');
+                if (existingNote) {
+                    existingNote.remove();
+                }
+                
+                // 清除之前的加線
+                const existingLedgerLines = document.querySelectorAll('.ledger-line');
+                existingLedgerLines.forEach(line => line.remove());
+                
+                const sheetMusic = document.querySelector('.sheet-music');
+                const position = notePositions[note];
+                
+                // 創建音符
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note';
+                noteElement.style.top = position + 'px';
+                sheetMusic.appendChild(noteElement);
+                
+                // 如果需要加線
+                if (needsLedgerLine(position)) {
+                    const ledgerLinePositions = getLedgerLinePositions(position);
+                    
+                    // 添加每一條需要的加線
+                    ledgerLinePositions.forEach(linePos => {
+                        const ledgerLine = document.createElement('div');
+                        ledgerLine.className = 'ledger-line';
+                        ledgerLine.style.top = linePos + 'px';
+                        sheetMusic.appendChild(ledgerLine);
+                    });
+                }
+                
+                // 保存當前音符
+                currentNote = note;
+            }
+            
+            // 顯示反饋訊息
+            function showFeedback(isCorrect) {
+                const feedback = document.querySelector('.feedback');
+                feedback.textContent = isCorrect ? '正確!' : '錯誤，請重試!';
+                feedback.className = 'feedback ' + (isCorrect ? 'correct' : 'incorrect');
+                
+                // 3秒後清除反饋
+                setTimeout(() => {
+                    feedback.textContent = '';
+                    feedback.className = 'feedback';
+                }, 2000);
+            }
+            
+            // 更新分數
+            function updateScore(points) {
+                score += points;
+                document.querySelector('.score-display').textContent = `分數: ${score}`;
+            }
+            
+            // 檢查用戶按下的音符是否正確
+            function checkNote(playedNote) {
+                if (!practiceActive || !currentNote) return;
+                
+                if (playedNote === currentNote) {
+                    // 正確
+                    showFeedback(true);
+                    updateScore(10);
+                    
+                    // 高亮正確的鍵
+                    const key = document.querySelector(`.key[data-note="${currentNote}"]`);
+                    key.classList.add('highlight');
+                    
+                    // 短暫延遲後生成新音符
+                    setTimeout(() => {
+                        key.classList.remove('highlight');
+                        generateNewNote();
+                    }, 500);
+                } else {
+                    // 錯誤
+                    showFeedback(false);
+                    updateScore(-5);
+                }
+            }
+            
+            // 生成新的音符
+            function generateNewNote() {
+                if (!practiceActive) return;
+                
+                const newNote = generateRandomNote();
+                displayNote(newNote);
+            }
+            
+            // 開始練習按鈕
+            document.getElementById('start-practice').addEventListener('click', function() {
+                practiceActive = true;
+                score = 0;
+                updateScore(0);
+                
+                // 初始化音頻上下文（解決某些瀏覽器需要用戶交互才能播放聲音的問題）
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                generateNewNote();
+            });
+            
+            // 新音符按鈕
+            document.getElementById('new-note').addEventListener('click', function() {
+                if (!practiceActive) return;
+                generateNewNote();
+            });
+            
+            // 播放音符函數
+            function playNote(frequency) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = frequency;
+                gainNode.gain.value = 0.3;
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start();
+                
+                // 設置淡出效果
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.5);
+                
+                // 1.5秒後停止
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 1500);
+                
+                return oscillator;
+            }
+            
+            // 為所有鍵添加事件監聽器
+            const keys = document.querySelectorAll('.key');
+            
+            keys.forEach(key => {
+                key.addEventListener('mousedown', function() {
+                    const note = this.getAttribute('data-note');
+                    const frequency = noteFrequency[note];
+                    
+                    // 添加活躍狀態
+                    this.classList.add('active');
+                    
+                    // 初始化音頻上下文（解決某些瀏覽器需要用戶交互才能播放聲音的問題）
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                    }
+                    
+                    // 播放音符
+                    playNote(frequency);
+                    
+                    // 檢查是否是正確的音符
+                    checkNote(note);
+                });
+                
+                key.addEventListener('mouseup', function() {
+                    this.classList.remove('active');
+                });
+                
+                key.addEventListener('mouseleave', function() {
+                    this.classList.remove('active');
+                });
+            });
+            
+            // 鍵盤控制 - 第一個八度 (數字鍵)
+            const keyMapOctave1 = {
+                '1': 'C3',
+                '!': 'Db3',
+                '2': 'D3',
+                '@': 'Eb3',
+                '3': 'E3',
+                '4': 'F3',
+                '$': 'Gb3',
+                '5': 'G3',
+                '%': 'Ab3',
+                '6': 'A3',
+                '^': 'Bb3',
+                '7': 'B3'
+            };
+            
+            // 鍵盤控制 - 第二個八度 (字母鍵)
+            const keyMapOctave2 = {
+                'a': 'C4',
+                'w': 'Db4',
+                's': 'D4',
+                'e': 'Eb4',
+                'd': 'E4',
+                'f': 'F4',
+                't': 'Gb4',
+                'g': 'G4',
+                'y': 'Ab4',
+                'h': 'A4',
+                'u': 'Bb4',
+                'j': 'B4'
+            };
+            
+            // 鍵盤控制 - 第三個八度 (ZXCV 區域)
+            const keyMapOctave3 = {
+                'z': 'C5',
+                'q': 'Db5',
+                'x': 'D5',
+                'r': 'Eb5',
+                'c': 'E5',
+                'v': 'F5',
+                'i': 'Gb5',
+                'b': 'G5',
+                'o': 'Ab5',
+                'n': 'A5',
+                'p': 'Bb5',
+                'm': 'B5'
+            };
+            
+            // 合併所有鍵盤映射
+            const keyMap = {...keyMapOctave1, ...keyMapOctave2, ...keyMapOctave3};
+            
+            // 輸出鍵盤映射到控制台，讓用戶知道如何使用鍵盤控制
+            console.log("鍵盤控制映射：", keyMap);
+            
+            document.addEventListener('keydown', function(event) {
+                if (event.repeat) return; // 避免長按重複觸發
+                
+                const note = keyMap[event.key];
+                if (note) {
+                    const key = document.querySelector(`.key[data-note="${note}"]`);
+                    if (key) {
+                        key.dispatchEvent(new MouseEvent('mousedown'));
+                    }
+                }
+            });
+            
+            document.addEventListener('keyup', function(event) {
+                const note = keyMap[event.key];
+                if (note) {
+                    const key = document.querySelector(`.key[data-note="${note}"]`);
+                    if (key) {
+                        key.dispatchEvent(new MouseEvent('mouseup'));
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
