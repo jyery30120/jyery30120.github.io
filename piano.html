@@ -341,6 +341,13 @@
             
             // 五線譜上的音符位置 (僅適用於C, D, E, F, G, A, B自然音)
             const notePositions = {
+                // 'C3': 266, // 中央C (五線譜下第一條加線)
+                // 'D3': 254,
+                // 'E3': 242, // 第一線
+                // 'F3': 230,
+                'G3': 218, // 第二線
+                'A3': 206,
+                'B3': 194, // 第三線
                 'C4': 182, // 中央C (五線譜下第一條加線)
                 'D4': 170,
                 'E4': 158, // 第一線
@@ -374,15 +381,14 @@
                 
                 // 低音部分 (五線譜下方)
                 if (notePosition >= 180) {
-                    for (let pos = 180; pos <= notePosition; pos += 20) {
-                        positions.push(pos + 11);
+                    for (let pos = 182; pos <= notePosition; pos += 24) {
+                        positions.push(pos + 9);
                     }
                 }
                 
                 // 高音部分 (五線譜上方)
-				console.log("pos=" + notePosition) 
                 if (notePosition <= 38) { 
-                    for (let pos = 38; pos >= notePosition; pos -= 20) {
+                    for (let pos = 38; pos >= notePosition; pos -= 24) {
                         positions.push(pos + 9);
                     }
                 }
