@@ -144,6 +144,12 @@
             top: 50%;
             transform: translateY(-50%);
         }
+
+        .clef.bass-clef {
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 120px;
+        }
         
         .practice-controls {
             display: flex;
@@ -210,9 +216,10 @@
         <div class="practice-controls">
             <button id="start-practice">開始練習</button>
             <button id="new-note">新音符</button>
+            <button id="toggle-clef">切換高低音譜</button>
         </div>
         
-        <div class="score-display">分數: 0</div>
+        <div class="score-display">正確次數: <span id="correct-count">0</span> | 錯誤次數: <span id="incorrect-count">0</span></div>
         <div class="feedback"></div>
         
         <div class="piano-wrapper">
@@ -338,13 +345,12 @@
                 'Bb5': 932.33,
                 'B5': 987.77
             };
+
+            // **新增變數**: 判斷是高音譜號還是低音譜號
+            let useTrebleClef = true;
             
             // 五線譜上的音符位置 (僅適用於C, D, E, F, G, A, B自然音)
             const notePositions = {
-                // 'C3': 266, // 中央C (五線譜下第一條加線)
-                // 'D3': 254,
-                // 'E3': 242, // 第一線
-                // 'F3': 230,
                 'G3': 218, // 第二線
                 'A3': 206,
                 'B3': 194, // 第三線
@@ -362,6 +368,21 @@
                 'G5': 50,
                 'A5': 38,
                 'B5': 26
+            };
+
+            // **新增音符位置**: 低音譜號的音符位置
+            const notePositionsBass = {
+                'C3': 122,
+                'D3': 110,
+                'E3': 98,
+                'F3': 86,
+                'G3': 74,
+                'A3': 62,
+                'B3': 50,
+                'C4': 38,
+                'D4': 26,
+                'E4': 14,
+                'F4': 2,
             };
             
             // 五線譜相關變量
@@ -399,9 +420,11 @@
             // 生成隨機音符
             function generateRandomNote() {
                 // 僅從白鍵音符中選擇 (C, D, E, F, G, A, B)
-                const whiteNotes = Object.keys(notePositions);
+                console.log("useTrebleClef=" + useTrebleClef)
+                const whiteNotes = Object.keys(useTrebleClef ? notePositions:notePositionsBass);
                 const randomIndex = Math.floor(Math.random() * whiteNotes.length);
                 return whiteNotes[randomIndex];
+                // return whiteNotes[10];
             }
             
             // 顯示音符在五線譜上
@@ -417,7 +440,7 @@
                 existingLedgerLines.forEach(line => line.remove());
                 
                 const sheetMusic = document.querySelector('.sheet-music');
-                const position = notePositions[note];
+                const position = (useTrebleClef ?notePositions:notePositionsBass)[note];
                 
                 // 創建音符
                 const noteElement = document.createElement('div');
@@ -460,6 +483,16 @@
                 score += points;
                 document.querySelector('.score-display').textContent = `分數: ${score}`;
             }
+
+            function updateCounts(isCorrect) {
+                if (isCorrect) {
+                    correctCount++;
+                    document.getElementById('correct-count').textContent = correctCount;
+                } else {
+                    incorrectCount++;
+                    document.getElementById('incorrect-count').textContent = incorrectCount;
+                }
+            }
             
             // 檢查用戶按下的音符是否正確
             function checkNote(playedNote) {
@@ -468,7 +501,7 @@
                 if (playedNote === currentNote) {
                     // 正確
                     showFeedback(true);
-                    updateScore(10);
+                    updateCounts(true);
                     
                     // 高亮正確的鍵
                     const key = document.querySelector(`.key[data-note="${currentNote}"]`);
@@ -482,7 +515,7 @@
                 } else {
                     // 錯誤
                     showFeedback(false);
-                    updateScore(-5);
+                    updateCounts(false);
                 }
             }
             
@@ -491,14 +524,25 @@
                 if (!practiceActive) return;
                 
                 const newNote = generateRandomNote();
+                console.log("newNote=" + newNote)
                 displayNote(newNote);
+            }
+
+            function toggleClef() {
+                useTrebleClef = !useTrebleClef;
+                const clefElement = document.querySelector('.clef');
+                clefElement.textContent = useTrebleClef ? '𝄞' : '𝄢'; // 高音譜號 : 低音譜號
+                clefElement.className = useTrebleClef ? 'clef treble-clef' : 'clef bass-clef'; // 更改 Class
+
+                //  每次切換時都重新生成一個新的音符
+                generateNewNote();
             }
             
             // 開始練習按鈕
             document.getElementById('start-practice').addEventListener('click', function() {
                 practiceActive = true;
-                score = 0;
-                updateScore(0);
+                correctCount = 0;
+                incorrectCount = 0;
                 
                 // 初始化音頻上下文（解決某些瀏覽器需要用戶交互才能播放聲音的問題）
                 if (audioContext.state === 'suspended') {
@@ -513,6 +557,10 @@
                 if (!practiceActive) return;
                 generateNewNote();
             });
+
+            document.getElementById('toggle-clef').addEventListener('click', function() {
+                toggleClef();
+            });;
             
             // 播放音符函數
             function playNote(frequency) {
