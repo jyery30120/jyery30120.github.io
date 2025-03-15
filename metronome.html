@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可調節節拍器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .tempo-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #333;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 0 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #startStop {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .slider-container {
+            width: 80%;
+            margin: 20px auto;
+        }
+        #tempoSlider {
+            width: 100%;
+            height: 5px;
+        }
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .preset {
+            margin: 5px;
+            padding: 8px 12px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .preset:hover {
+            background-color: #0b7dda;
+        }
+        .beat-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #ccc;
+            display: inline-block;
+            margin: 0 5px;
+        }
+        .active {
+            background-color: #ff6b6b;
+            transform: scale(1.2);
+            transition: all 0.1s ease;
+        }
+        .beat-visualization {
+            margin: 20px 0;
+            min-height: 30px;
+        }
+        #tempoLabel {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        .time-signature {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .time-signature input {
+            width: 50px;
+            text-align: center;
+            font-size: 24px;
+            padding: 5px;
+            margin: 0 5px;
+        }
+        .time-signature span {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .section-title {
+            margin-top: 25px;
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>節拍器</h1>
+        
+        <div id="tempoDisplay" class="tempo-display">120</div>
+        <div id="tempoLabel">中速 (Moderato)</div>
+        
+        <div class="section-title">速度調整</div>
+        <div class="slider-container">
+            <input type="range" min="40" max="240" value="120" id="tempoSlider">
+        </div>
+        
+        <div class="controls">
+            <button id="decreaseTempo">-</button>
+            <button id="increaseTempo">+</button>
+        </div>
+        
+        <div class="section-title">節拍調整</div>
+        <div class="time-signature">
+            <input type="number" id="beatsPerMeasure" min="1" max="16" value="1">
+            <span>/</span>
+            <select id="beatUnit">
+                <option value="4">4</option>
+                <option value="8">8</option>
+                <option value="2">2</option>
+                <option value="16">16</option>
+            </select>
+        </div>
+        
+        <div class="preset-buttons">
+            <button class="preset" data-tempo="60">慢板 (60)</button>
+            <button class="preset" data-tempo="80">柔板 (80)</button>
+            <button class="preset" data-tempo="100">行板 (100)</button>
+            <button class="preset" data-tempo="120">中速 (120)</button>
+            <button class="preset" data-tempo="140">快板 (140)</button>
+            <button class="preset" data-tempo="160">急板 (160)</button>
+            <button class="preset" data-tempo="180">非常快 (180)</button>
+        </div>
+        
+        <div class="beat-visualization" id="beatVisualization">
+            <!-- 節拍圓點將由JavaScript動態生成 -->
+        </div>
+        
+        <button id="startStop">開始</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tempoDisplay = document.getElementById('tempoDisplay');
+            const tempoSlider = document.getElementById('tempoSlider');
+            const startStopButton = document.getElementById('startStop');
+            const decreaseButton = document.getElementById('decreaseTempo');
+            const increaseButton = document.getElementById('increaseTempo');
+            const presetButtons = document.querySelectorAll('.preset');
+            const beatVisualization = document.getElementById('beatVisualization');
+            const tempoLabel = document.getElementById('tempoLabel');
+            const beatsPerMeasureInput = document.getElementById('beatsPerMeasure');
+            const beatUnitSelect = document.getElementById('beatUnit');
+            
+            let tempo = 120;
+            let isPlaying = false;
+            let timer;
+            let currentBeat = 0;
+            let beatsPerMeasure = 1;
+            
+            // 更新速度標籤
+            function updateTempoLabel(tempo) {
+                let label = "";
+                if (tempo < 60) label = "極慢 (Larghissimo)";
+                else if (tempo < 76) label = "慢板 (Largo)";
+                else if (tempo < 90) label = "柔板 (Adagio)";
+                else if (tempo < 112) label = "行板 (Andante)";
+                else if (tempo < 132) label = "中速 (Moderato)";
+                else if (tempo < 152) label = "快板 (Allegro)";
+                else if (tempo < 176) label = "急板 (Vivace)";
+                else label = "極快 (Presto)";
+                
+                tempoLabel.textContent = label;
+            }
+            
+            // 初始化速度顯示
+            tempoDisplay.textContent = tempo;
+            updateTempoLabel(tempo);
+            
+            // 生成節拍圓點
+            function generateBeatCircles() {
+                beatVisualization.innerHTML = '';
+                for (let i = 0; i < beatsPerMeasure; i++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'beat-circle';
+                    beatVisualization.appendChild(circle);
+                }
+            }
+            
+            // 初始化節拍圓點
+            generateBeatCircles();
+            
+            // 播放音頻
+            function playClick(frequency, duration) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = frequency;
+                gainNode.gain.value = 0.5;
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start();
+                
+                // 淡出效果
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                
+                // 停止振盪器
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+            
+            // 開始節拍器
+            function startMetronome() {
+                isPlaying = true;
+                startStopButton.textContent = '停止';
+                
+                // 取得節拍圓點
+                const beatCircles = document.querySelectorAll('.beat-circle');
+                
+                // 清除所有活躍狀態
+                beatCircles.forEach(circle => circle.classList.remove('active'));
+                
+                const interval = 60000 / tempo; // 毫秒
+                
+                // 立即播放第一個節拍
+                playBeat();
+                
+                timer = setInterval(playBeat, interval);
+            }
+            
+            // 播放單個節拍
+            function playBeat() {
+                // 取得節拍圓點
+                const beatCircles = document.querySelectorAll('.beat-circle');
+                
+                // 移除所有活躍狀態
+                beatCircles.forEach(circle => circle.classList.remove('active'));
+                
+                // 設置當前節拍為活躍
+                beatCircles[currentBeat].classList.add('active');
+                
+                // 第一拍使用較高的音頻
+                if (currentBeat === 0) {
+                    playClick(1000, 0.1); // 高音
+                } else {
+                    playClick(800, 0.1); // 低音
+                }
+                
+                // 更新下一拍
+                currentBeat = (currentBeat + 1) % beatsPerMeasure;
+            }
+            
+            // 停止節拍器
+            function stopMetronome() {
+                isPlaying = false;
+                startStopButton.textContent = '開始';
+                clearInterval(timer);
+                
+                // 取得節拍圓點
+                const beatCircles = document.querySelectorAll('.beat-circle');
+                
+                // 清除所有活躍狀態
+                beatCircles.forEach(circle => circle.classList.remove('active'));
+                
+                // 重置當前節拍
+                currentBeat = 0;
+            }
+            
+            // 更新節拍數
+            function updateBeatsPerMeasure() {
+                beatsPerMeasure = parseInt(beatsPerMeasureInput.value);
+                
+                // 確保值在有效範圍內
+                if (beatsPerMeasure < 1) beatsPerMeasure = 1;
+                if (beatsPerMeasure > 16) beatsPerMeasure = 16;
+                
+                beatsPerMeasureInput.value = beatsPerMeasure;
+                
+                // 更新節拍圓點
+                generateBeatCircles();
+                
+                // 如果正在播放，重新啟動節拍器
+                if (isPlaying) {
+                    stopMetronome();
+                    startMetronome();
+                }
+            }
+            
+            // 事件監聽器
+            startStopButton.addEventListener('click', function() {
+                if (isPlaying) {
+                    stopMetronome();
+                } else {
+                    startMetronome();
+                }
+            });
+            
+            tempoSlider.addEventListener('input', function() {
+                tempo = parseInt(this.value);
+                tempoDisplay.textContent = tempo;
+                updateTempoLabel(tempo);
+                
+                // 如果正在播放，重新啟動節拍器以更新速度
+                if (isPlaying) {
+                    stopMetronome();
+                    startMetronome();
+                }
+            });
+            
+            decreaseButton.addEventListener('click', function() {
+                if (tempo > 40) {
+                    tempo--;
+                    tempoDisplay.textContent = tempo;
+                    tempoSlider.value = tempo;
+                    updateTempoLabel(tempo);
+                    
+                    if (isPlaying) {
+                        stopMetronome();
+                        startMetronome();
+                    }
+                }
+            });
+            
+            increaseButton.addEventListener('click', function() {
+                if (tempo < 240) {
+                    tempo++;
+                    tempoDisplay.textContent = tempo;
+                    tempoSlider.value = tempo;
+                    updateTempoLabel(tempo);
+                    
+                    if (isPlaying) {
+                        stopMetronome();
+                        startMetronome();
+                    }
+                }
+            });
+            
+            // 預設速度按鈕
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    tempo = parseInt(this.getAttribute('data-tempo'));
+                    tempoDisplay.textContent = tempo;
+                    tempoSlider.value = tempo;
+                    updateTempoLabel(tempo);
+                    
+                    if (isPlaying) {
+                        stopMetronome();
+                        startMetronome();
+                    }
+                });
+            });
+            
+            // 監聽節拍數更改
+            beatsPerMeasureInput.addEventListener('change', updateBeatsPerMeasure);
+            
+            // 監聽拍號單位更改
+            beatUnitSelect.addEventListener('change', function() {
+                // 目前只影響顯示，不影響功能
+                // 在這個簡單的實作中，我們只考慮每個小節的拍數
+                if (isPlaying) {
+                    stopMetronome();
+                    startMetronome();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
