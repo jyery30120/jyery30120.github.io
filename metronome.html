@@ -189,6 +189,16 @@
             let timer;
             let currentBeat = 0;
             let beatsPerMeasure = 1;
+
+                // 創建單一 AudioContext
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 檢查並恢復 AudioContext
+            function ensureAudioContextRunning() {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
             
             // 更新速度標籤
             function updateTempoLabel(tempo) {
@@ -224,7 +234,7 @@
             
             // 播放音頻
             function playClick(frequency, duration) {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                ensureAudioContextRunning();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
                 
