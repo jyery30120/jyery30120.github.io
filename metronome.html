@@ -22,7 +22,7 @@
         h1 {
             color: #333;
         }
-        .tempo-display {
+        .tempo-display, .beat-display {
             font-size: 48px;
             font-weight: bold;
             margin: 20px 0;
@@ -143,15 +143,11 @@
         </div>
         
         <div class="section-title">節拍調整</div>
+        <div id="beatDisplay" class="beat-display">1</div>
         <div class="time-signature">
-            <input type="number" id="beatsPerMeasure" min="1" max="16" value="1">
-            <span>/</span>
-            <select id="beatUnit">
-                <option value="4">4</option>
-                <option value="8">8</option>
-                <option value="2">2</option>
-                <option value="16">16</option>
-            </select>
+            <!-- <input type="number" id="beatsPerMeasure" min="1" max="16" value="1"> -->
+            <button id="decreaseBeat">-</button>
+            <button id="increaseBeat">+</button>
         </div>
         
         <div class="preset-buttons">
@@ -178,11 +174,12 @@
             const startStopButton = document.getElementById('startStop');
             const decreaseButton = document.getElementById('decreaseTempo');
             const increaseButton = document.getElementById('increaseTempo');
+            const decreaseBeatButton = document.getElementById('decreaseBeat');
+            const increaseBeatButton = document.getElementById('increaseBeat');
             const presetButtons = document.querySelectorAll('.preset');
             const beatVisualization = document.getElementById('beatVisualization');
             const tempoLabel = document.getElementById('tempoLabel');
             const beatsPerMeasureInput = document.getElementById('beatsPerMeasure');
-            const beatUnitSelect = document.getElementById('beatUnit');
             
             let tempo = 120;
             let isPlaying = false;
@@ -379,6 +376,32 @@
                     }
                 }
             });
+
+            decreaseBeatButton.addEventListener('click', function() {
+                if (beatsPerMeasure > 1) {
+                    beatsPerMeasure--;
+                    beatDisplay.textContent = beatsPerMeasure;
+                    generateBeatCircles()
+                    
+                    if (isPlaying) {
+                        stopMetronome();
+                        startMetronome();
+                    }
+                }
+            });
+            
+            increaseBeatButton.addEventListener('click', function() {
+                if (beatsPerMeasure < 5) {
+                    beatsPerMeasure++;
+                    beatDisplay.textContent = beatsPerMeasure;
+                    generateBeatCircles()
+                    
+                    if (isPlaying) {
+                        stopMetronome();
+                        startMetronome();
+                    }
+                }
+            });
             
             // 預設速度按鈕
             presetButtons.forEach(button => {
@@ -398,15 +421,6 @@
             // 監聽節拍數更改
             beatsPerMeasureInput.addEventListener('change', updateBeatsPerMeasure);
             
-            // 監聽拍號單位更改
-            beatUnitSelect.addEventListener('change', function() {
-                // 目前只影響顯示，不影響功能
-                // 在這個簡單的實作中，我們只考慮每個小節的拍數
-                if (isPlaying) {
-                    stopMetronome();
-                    startMetronome();
-                }
-            });
         });
     </script>
 </body>
