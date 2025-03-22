@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的百岳地圖</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/leaflet.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        
+        .header {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+        
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        
+        .csv-input {
+            position: absolute;
+            bottom: 20px;
+            left: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .triangle-marker {
+            display: inline-block;
+            transform: rotate(30deg); /* 調整旋轉角度 */
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 20px solid #ff0000; /* 三角形顏色 */
+            margin: -10px 0 0 -10px;
+            position: relative;
+            top: 10px;
+        }
+
+        /* 根據海拔調整顏色 */
+        .triangle {
+            border-bottom-color: #FD8D3C; /* 預設顏色 */
+        }
+
+        .leaflet-popup {
+            pointer-events: auto !important; /* 允許同時操作多視窗 */
+            max-width: 150px; /* 設定最大寬度 */
+            font-size: 10px; /* 縮小字體大小 */ 
+        }
+
+        .peak-info {
+            font-size: 8px;
+            line-height: 1;
+            min-width: 30px;
+        }
+
+        .leaflet-popup-tip-container {
+            display: none; /* 隱藏箭頭避免重疊 */
+        }
+
+        .leaflet-popup-close-button {
+            display: none !important;
+        }
+
+        .leaflet-popup-tip {
+            display: none !important; /* 隱藏箭頭 */
+        }
+
+        .leaflet-popup-content {
+            margin: 5px; /* 減小默認的 margin */
+            padding: 0;
+        }
+
+        #togglePopups {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .statistics {
+            position: absolute;
+            bottom: 310px;
+            right: 10px;
+            z-index: 1000;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+        }
+
+        .statistics h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+
+        .statistics p {
+            margin: 5px 0;
+        }
+
+        .peaks-list {
+            position: absolute;
+            bottom: 20px;
+            right: 10px;
+            z-index: 1000;
+            width: 180px;
+            max-height: 30vh;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .peaks-list h3 {
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .search-box {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .list-container {
+            overflow-y: auto;
+            max-height: calc(70vh - 100px);
+        }
+
+        #mountainList {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #mountainList li {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        #mountainList li:hover {
+            background-color: #f5f5f5;
+        }
+
+        #mountainList li.climbed {
+            color: #2ECC71;
+        }
+
+        #mountainList li.unclimbed {
+            color: #FD8D3C;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>我的百岳地圖</h1>
+    </div>
+    
+    <div id="map"></div>
+
+    <!-- Toggle Button -->
+    <button id="togglePopups">打開所有彈出視窗</button>
+
+    <div id="statistics" class="statistics">
+        <h3>登頂統計</h3>
+        <p style="color:green;">已登頂: <span id="climbedCount">0</span> 座</p>
+        <p style="color:#FD8D3C;">剩餘: <span id="remainingCount">0</span> 座</p>
+    </div>
+
+    <div id="peaksList" class="peaks-list">
+        <div class="search-box">
+            <input type="text" id="searchPeak" placeholder="搜尋山峰...">
+        </div>
+        <div class="list-container">
+            <ul id="mountainList"></ul>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/leaflet.js"></script>
+    
+    <script>
+        // 初始化地圖，中心點設在台灣中心
+        const map = L.map('map').setView([23.6978, 120.9605], 8);
+        
+        // 添加OpenStreetMap底圖
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // 添加地形圖層
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri',
+            maxZoom: 17
+        });
+        
+        // 建立一個群組來存放所有山峰標記
+        const peaksGroup = L.layerGroup().addTo(map);
+        // let popups = []; // 儲存所有的 popup
+        let markers = []; // 儲存所有的 marker
+        
+        // 解析CSV檔案
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const result = [];
+            
+            // 檢查標題行
+            const headers = lines[0].split(',');
+            
+            // 移除BOM標記如果存在
+            headers[0] = headers[0].replace(/^\uFEFF/, '');
+            
+            // 處理資料行
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const values = lines[i].split(',');
+                const peak = {
+                    name: values[0],
+                    lat: parseFloat(values[1]),
+                    lng: parseFloat(values[2]),
+                    seq: values[3],
+                    ascents: parseInt(values[4]) || 0
+                };
+                
+                if (!isNaN(peak.lat) && !isNaN(peak.lng)) {
+                    result.push(peak);
+                }
+            }
+            
+            return result;
+        }
+
+        function getMarkerColor(peak) {
+            if (peak.ascents >= 1) {
+                return '#2ECC71'; // 綠色
+            }
+            return '#FD8D3C';
+        }
+        
+        
+        // 在地圖上顯示山峰
+        function displayPeaks(peaks) {
+            // 清除現有標記
+            peaksGroup.clearLayers();
+            markers = []; // 清空 marker 陣列
+            
+            // 添加新的標記
+            peaks.forEach(peak => {
+                const markerColor = getMarkerColor(peak);
+                const triangleIcon = L.divIcon({
+                    className: 'triangle-marker',
+                    html: `<div class="triangle" style="border-bottom-color: ${markerColor}"></div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10] // 新增錨點定位
+                });
+
+                const marker = L.marker([peak.lat, peak.lng], {
+                    icon: triangleIcon
+                }).addTo(peaksGroup);
+            
+
+                // 建立彈出視窗的內容
+                const popupContent = `
+                    <div class="peak-info">
+                        <h3>${peak.seq}. ${peak.name} ${peak.ascents > 0 ? `(${peak.ascents})` : ''}</h3>
+                    </div>
+                `;
+                
+                // 將彈出視窗綁定到標記，但不自動開啟
+                marker.bindPopup(popupContent, {
+                    autoClose: false,
+                    closeOnClick: true
+                });
+                
+                markers.push(marker);
+            });
+            
+            // 如果有山峰，調整地圖視角
+            if (peaks.length > 0) {
+                const group = L.featureGroup(peaksGroup.getLayers());
+                map.fitBounds(group.getBounds(), { padding: [50, 50] });
+            }
+            
+            // 添加圖例
+            if (document.querySelector('.legend')) {
+                document.querySelector('.legend').remove();
+            }
+
+            const climbedCount = peaks.filter(peak => peak.ascents >= 1).length;
+            const remainingCount = 100 - climbedCount;
+
+            document.getElementById('climbedCount').textContent = climbedCount;
+            document.getElementById('remainingCount').textContent = remainingCount;
+
+            // 生成山峰清單
+            const mountainList = document.getElementById('mountainList');
+            mountainList.innerHTML = ''; // 清空列表
+
+            // 按編號排序
+            peaks.sort((a, b) => parseInt(a.seq) - parseInt(b.seq));
+
+            // 填充列表
+            peaks.forEach(peak => {
+                const li = document.createElement('li');
+                li.textContent = `${peak.seq}. ${peak.name} ${peak.ascents > 0 ? `(${peak.ascents})` : ''}`;
+                li.className = peak.ascents >= 1 ? 'climbed' : 'unclimbed';
+                li.addEventListener('click', () => {
+                    // 移動地圖到山峰位置
+                    map.setView([peak.lat, peak.lng], 12);
+                    
+                    // 找到對應的標記並打開彈出視窗
+                    const peakMarker = markers.find(m => 
+                        m.getLatLng().lat === peak.lat && 
+                        m.getLatLng().lng === peak.lng
+                    );
+                    
+                    if (peakMarker) {
+                        peakMarker.openPopup();
+                    }
+                });
+                mountainList.appendChild(li);
+            });
+
+            // 添加搜尋功能
+            document.getElementById('searchPeak').addEventListener('input', function(e) {
+                const searchText = e.target.value.toLowerCase();
+                const items = mountainList.getElementsByTagName('li');
+                
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchText)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        let popupsVisible = false; // 追蹤 popups 的可見性
+
+
+        document.getElementById('togglePopups').addEventListener('click', function() {
+            if (popupsVisible) {
+                markers.forEach(marker => {
+                    marker.closePopup();
+                });
+                this.textContent = '打開所有彈出視窗';
+            } else {
+                markers.forEach(marker => {
+                    marker.openPopup();
+                });
+                this.textContent = '關閉所有彈出視窗';
+            }
+            popupsVisible = !popupsVisible;
+        });
+                
+        
+        // 載入範例資料
+        document.addEventListener('DOMContentLoaded', function() {
+            // 範例資料（前10座百岳）
+            const exampleCSV = `山名,緯度,經度,編號,登頂次數
+玉山,23.470002,120.957274,1,5
+雪山,24.383401,121.231754,2,2
+玉山東峰,23.470775,120.965668,3,1
+玉山北峰,23.487452,120.959672,4,2
+玉山南峰,23.446581,120.958784,5,0
+秀姑巒山,23.496791,121.05744,6,0
+馬博拉斯山,23.52034,121.067236,7,0
+南湖大山,24.361805,121.439359,8,0
+東小南山,23.439036,120.963411,9,0
+中央尖山,24.310226,121.416203,10,0
+雪山北峰,24.414724,121.240396,11,1
+關山,23.228086,120.911717,12,0
+南湖大山東峰,24.365894,121.450661,13,0
+大水窟山,23.473853,121.038618,14,0
+東郡大山,23.626735,121.092082,15,0
+奇萊主山北峰,24.118339,121.334539,16,1
+向陽山,23.284291,120.992423,17,1
+大劍山,24.340941,121.200492,18,0
+雲峰,23.353743,120.975757,19,0
+奇萊主山,24.085997,121.323234,20,1
+馬利加南山,23.521592,121.117171,21,0
+南湖北山,24.383669,121.437171,22,0
+大雪山,24.330751,121.121182,23,0
+品田山,24.428214,121.266816,24,1
+玉山西峰,23.472426,120.934205,25,1
+頭鷹山,24.359607,121.140723,26,0
+三叉山,23.297183,121.028671,27,1
+大霸尖山,24.457743,121.258031,28,1
+南湖大山南峰,24.347784,121.434582,29,0
+東巒大山,23.648667,121.081564,30,0
+無明山,24.255559,121.384663,31,0
+巴巴山,24.342411,121.43782,32,0
+馬西山,23.483755,121.173967,33,0
+北合歡山,24.181496,121.281587,34,1
+合歡山東峰,24.135671,121.281033,35,1
+小霸尖山,24.45557,121.252049,36,1
+合歡山,24.142632,121.271166,37,1
+南玉山,23.429276,120.92491,38,0
+畢祿山,24.213579,121.347162,39,1
+卓社大山,23.834571,121.115822,40,0
+奇萊主山南峰,24.061219,121.279809,41,1
+南雙頭山,23.346062,121.010532,42,0
+能高山南峰,23.965374,121.278083,43,0
+白姑大山,24.202683,121.108962,44,0
+八通關山,23.490196,121.009592,45,0
+新康山,23.316418,121.127384,46,0
+丹大山,23.600421,121.213543,47,0
+桃山,24.432621,121.304898,48,1
+佳陽山,24.306633,121.187996,49,0
+火石山,24.381922,121.175055,50,0
+池有山,24.431102,121.28814,51,1
+伊澤山,24.469989,121.243603,52,1
+卑南主山,23.051181,120.874204,53,0
+郡大山,23.577365,120.962368,54,0
+志佳陽大山,24.357779,121.251324,55,1
+干卓萬山,23.876045,121.138989,56,0
+太魯閣大山,24.079077,121.420976,57,0
+轆轆山,23.391362,120.99808,58,0
+喀西帕南山,23.468634,121.195221,59,0
+內嶺爾山,23.579269,121.19605,60,0
+鈴鳴山,24.24438,121.351647,61,0
+能高山,23.992334,121.260253,62,0
+萬東山西峰,23.851873,121.185522,63,0
+劍山,24.295572,121.170202,64,0
+屏風山,24.149275,121.342934,65,0
+小關山,23.151654,120.87612,66,0
+義西請馬至山,23.58646,121.153265,67,0
+牧山,23.862896,121.160214,68,0
+玉山前峰,23.475605,120.917662,69,1
+石門山,24.152435,121.284587,70,1
+無雙山,23.59157,121.05432,71,0
+塔關山,23.251966,120.94222,72,0
+馬比杉山,24.348325,121.485633,73,0
+達芬尖山,23.43296,121.01322,74,0
+雪山東峰,24.388687,121.272073,75,2
+南華山,24.039337,121.285918,76,1
+關山嶺山,23.270996,120.959457,77,0
+海諾南山,23.185598,120.911328,78,0
+中雪山,24.336476,121.078059,79,0
+閂山,24.258708,121.309867,80,0
+甘藷峰,24.290393,121.389819,81,0
+西合歡山,24.17761,121.244525,82,1
+審馬陣山,24.380209,121.417448,83,0
+喀拉業山,24.44996,121.321288,84,0
+庫哈諾辛山,23.262774,120.900042,85,0
+加利山,24.4595,121.216197,86,1
+白石山,23.907542,121.274785,87,0
+磐石山,24.104728,121.388298,88,0
+帕托魯山,24.099441,121.466602,89,0
+北大武山,22.627075,120.76141,90,0
+西巒大山,23.694019,120.947166,91,1
+塔芬山,23.406038,121.026793,92,0
+立霧主山,24.124914,121.445703,93,0
+安東軍山,23.872712,121.266118,94,0
+光頭山,23.937997,121.271952,95,0
+羊頭山,24.208264,121.379765,96,1
+駒盆山?,23.548389,121.032528,97,0
+布拉克桑山,23.232838,121.0787,98,0
+六順山,23.724508,121.239549,99,0
+鹿山,23.45065,120.988479,100,0`;
+            
+            const peaks = parseCSV(exampleCSV);
+            displayPeaks(peaks);
+        });
+    </script>
+</body>
+</html>
