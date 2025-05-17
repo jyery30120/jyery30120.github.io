@@ -6,7 +6,7 @@
   <style>
     body { font-family: sans-serif; padding: 20px; }
     textarea { width: 100%; height: 200px; }
-    img { max-width: 90%; margin: 5px 0; display: block; }
+    img { max-width: 50%; margin: 5px 0; display: block; }
     #output { white-space: pre-wrap; border-top: 1px solid #ccc; margin-top: 20px; padding-top: 20px; }
     .gallery { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
   </style>
@@ -18,37 +18,31 @@
     <h1 id="logo"><a href="index.html">Jerry</a></h1>
   </header>    
   <BR><BR>
-  <h2>貼上 PTT HTML 內容，自動開圖</h2>
-  <textarea id="htmlInput" placeholder="貼上 HTML 內容..."></textarea><br>
-  <button onclick="renderContent()">抓圖片</button>
+  <h2>貼上 PTT 內容，自動開圖</h2>
+  <textarea id="textInput" placeholder="貼上內容..."></textarea><br>
+  <button onclick="convertText()">抓圖片</button>
 
   <div id="output"></div>
 
   <script>
-    function renderContent() {
-      const input = document.getElementById('htmlInput').value;
+    function convertText() {
+      const inputText = document.getElementById('textInput').value;
+      const lines = inputText.split('\n');
+      let outputHtml = '';
 
-      // 建立暫時的 DOM 用來處理
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = input;
-
-      // 把所有 imgur 連結的 <a> 替換成 <img>
-      const links = tempDiv.querySelectorAll('a[href*="imgur.com"]');
-      links.forEach(link => {
-        const url = link.href;
-        if (url.match(/\.(jpeg|jpg|png|gif)$/)) {
-          const img = document.createElement('img');
-          img.src = url;
-          link.replaceWith(img);
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed.match(/^https:\/\/imgur\.com\/\w+\.(jpg|jpeg|png|gif)$/i)) {
+          outputHtml += `<img src="${trimmed}" alt="imgur image">\n`;
+        } else if (trimmed.match(/^https:\/\/imgur\.com\/\w+$/i)) {
+          // 沒附副檔名的 imgur，預設補 .jpg
+          outputHtml += `<img src="${trimmed}.jpg" alt="imgur image">\n`;
         } else {
-          // 有些 imgur 連結沒附副檔名，預設加 .jpg
-          const img = document.createElement('img');
-          img.src = url + '.jpg';
-          link.replaceWith(img);
+          outputHtml += line + '\n';
         }
       });
 
-      document.getElementById('output').innerHTML = tempDiv.innerHTML;
+      document.getElementById('output').innerHTML = outputHtml;
     }
   </script>
 </body>
