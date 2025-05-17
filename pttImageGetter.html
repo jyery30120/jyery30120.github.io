@@ -32,7 +32,7 @@
 
       lines.forEach(line => {
         const trimmed = line.trim();
-        if (trimmed.match(/^https:\/\/imgur\.com\/\w+\.(jpg|jpeg|png|gif)$/i)) {
+        if (trimmed.match(/^https:\/\/(i\.)?imgur\.com\/\w+\.(jpg|jpeg|png|gif)$/i)) {
           outputHtml += `<img src="${trimmed}" alt="imgur image">\n`;
         } else if (trimmed.match(/^https:\/\/imgur\.com\/\w+$/i)) {
           // 沒附副檔名的 imgur，預設補 .jpg
