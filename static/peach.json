@@ -1,0 +1,95 @@
+{
+  "canvasWidth": 720,
+  "canvasHeight": 570,
+  "startNode": "wuling",
+  "nodes": [
+    {
+      "id": "wuling",
+      "name": "武陵吊橋",
+      "x": 118.1507196597594,
+      "y": 532.6469955275866,
+      "type": "start"
+    },
+    {
+      "id": "chaolu",
+      "name": "岔路",
+      "x": 120.8136564690839,
+      "y": 439.1308302592349,
+      "type": "node"
+    },
+    {
+      "id": "taoshanwu",
+      "name": "桃山山屋",
+      "x": 435.8463166398201,
+      "y": 245.55272946095062,
+      "type": "camp"
+    },
+    {
+      "id": "taohei",
+      "name": "桃山黑水塘",
+      "x": 436.0788265067017,
+      "y": 331.9050399142142,
+      "type": "node"
+    },
+    {
+      "id": "taokoukou",
+      "name": "桃山\n登山口",
+      "x": 436.3646034628011,
+      "y": 438.0072679613964,
+      "type": "node",
+      "rest": 10
+    },
+    {
+      "id": "shiphian",
+      "name": "詩崙山",
+      "x": 435.0387970896015,
+      "y": 157.9891367690604,
+      "type": "peak"
+    },
+    {
+      "id": "kalabaw",
+      "name": "喀拉業山",
+      "x": 434.0501128338938,
+      "y": 72.39106889612012,
+      "type": "node"
+    }
+  ],
+  "edges": [
+    {
+      "a": "wuling",
+      "b": "chaolu",
+      "up": 20,
+      "dn": 15
+    },
+    {
+      "a": "taohei",
+      "b": "taoshanwu",
+      "up": 230,
+      "dn": 130
+    },
+    {
+      "a": "taokoukou",
+      "b": "taohei",
+      "up": 220,
+      "dn": 110
+    },
+    {
+      "a": "taoshanwu",
+      "b": "shiphian",
+      "up": 70,
+      "dn": 85
+    },
+    {
+      "a": "shiphian",
+      "b": "kalabaw",
+      "up": 60,
+      "dn": 70
+    },
+    {
+      "a": "chaolu",
+      "b": "taokoukou",
+      "up": 10,
+      "dn": 15
+    }
+  ]
+}

@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登山時間計算器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eaf4ea;--border:#b0ccb0;--text:#1a2e1a;--muted:#5a7a5a;
+  --gd:#2a6a2a;--gm:#4a9a4a;
+  --cn:#cce8cc;--cnb:#4a9a4a;
+  --cp:#c8e4f8;--cpb:#3a7ab8;
+  --cc:#fde0c0;--ccb:#c07030;
+  --cs:#ffe0b2;--csb:#e65100;
+  --cw:#d4ecf8;--cwb:#2a6a9a;
+  --ct:#0a5a0a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);font-family:'Noto Sans TC',sans-serif;color:var(--text);}
+
+header{background:linear-gradient(135deg,#2a6a2a,#4a9a4a);color:#fff;padding:.75rem 1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+header h1{font-size:1.1rem;font-weight:700;}
+header p{font-size:.75rem;opacity:.85;margin-top:.1rem;}
+
+.controls{background:#fff;border-bottom:2px solid var(--border);padding:.6rem 1.2rem;display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.cg{display:flex;align-items:center;gap:.4rem;}
+.cg label{font-size:.78rem;color:var(--muted);font-weight:500;white-space:nowrap;}
+input[type=time]{border:1.5px solid var(--border);border-radius:6px;padding:.28rem .5rem;font-family:'DM Mono',monospace;font-size:.88rem;color:var(--text);background:#fff;outline:none;}
+input[type=time]:focus{border-color:var(--gm);}
+input[type=range]{accent-color:var(--gd);width:90px;cursor:pointer;}
+.mv{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--gd);font-weight:700;min-width:2.4rem;}
+.dt{display:flex;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.dt button{background:#fff;border:none;padding:.28rem .7rem;font-size:.73rem;font-family:'Noto Sans TC',sans-serif;color:var(--muted);cursor:pointer;transition:.2s;border-right:1px solid var(--border);}
+.dt button:last-child{border-right:none;}
+.dt button.on{background:var(--gd);color:#fff;font-weight:700;}
+
+/* mode indicator */
+.mode-badge{font-size:.72rem;padding:.25rem .7rem;border-radius:12px;font-weight:600;border:1.5px solid;transition:.2s;}
+.mode-badge.normal{background:#f0f7f0;border-color:var(--border);color:var(--muted);}
+.mode-badge.connect{background:#fff3e0;border-color:#e08030;color:#8a4000;animation:pulse .8s infinite alternate;}
+@keyframes pulse{from{box-shadow:0 0 0 0 rgba(224,128,48,.3)}to{box-shadow:0 0 0 5px rgba(224,128,48,0)}}
+
+.top-section{position:sticky;top:0;z-index:100;}
+.map-section{height:calc(100dvh - var(--top-h,108px));min-height:480px;padding:1rem;display:flex;gap:1rem;align-items:stretch;overflow:hidden;background:var(--bg);}
+@media(max-width:600px){
+  .map-section{flex-direction:column;height:auto;min-height:unset;overflow-y:auto;overflow-x:hidden;padding:.6rem .6rem 1rem;}
+  .map-col{min-height:0;flex:none;}
+  .map-outer{height:55dvh;min-height:260px;flex:none !important;}
+  .legend{font-size:.62rem;gap:.45rem;}
+  .timeline-panel{width:100% !important;flex-shrink:0;max-height:none;overflow:visible;}
+  .tl-list{max-height:38dvh;overflow-y:auto;}
+}
+
+.map-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:.5rem;min-height:0;}
+.map-outer{background:#fff;border-radius:12px;border:2px solid var(--border);box-shadow:0 3px 14px rgba(0,0,0,.08);position:relative;user-select:none;flex:1;min-height:0;overflow:hidden;cursor:crosshair;}
+.map-outer.connect-mode{cursor:cell;border-color:#e08030;box-shadow:0 3px 14px rgba(224,128,48,.25);}
+#cvs{position:absolute;top:0;left:0;z-index:2;}
+#NL{position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none;}
+
+/* nodes */
+.nd{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:5;pointer-events:all;}
+.nd.dragging{cursor:grabbing;z-index:20;}
+.nd.selected>.nb{outline:3px solid #e08030;outline-offset:2px;}
+.nb{border-radius:24px;padding:6px 14px;text-align:center;border:2px solid;box-shadow:0 2px 5px rgba(0,0,0,.1);transition:box-shadow .15s,transform .15s;min-width:76px;pointer-events:none;}
+.nb.node {background:var(--cn);border-color:var(--cnb);}
+.nb.peak {background:var(--cp);border-color:var(--cpb);}
+.nb.camp {background:var(--cc);border-color:var(--ccb);}
+.nb.start{background:var(--cs);border-color:var(--csb);border-width:3px;}
+.nb.water{background:var(--cw);border-color:var(--cwb);}
+.nn{font-size:.88rem;font-weight:700;line-height:1.25;color:var(--text);white-space:pre-line;}
+.nt{font-family:'DM Mono',monospace;font-size:.95rem;font-weight:700;color:var(--ct);margin-top:2px;}
+.nr{font-size:.76rem;color:#c07030;font-weight:600;margin-top:2px;}
+
+/* context menu */
+.ctx-menu{position:fixed;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.15);z-index:1000;min-width:170px;overflow:hidden;animation:popIn .12s ease;}
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.ctx-title{font-size:.7rem;font-weight:700;color:var(--muted);padding:.5rem .8rem .3rem;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;}
+.ctx-item{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem;font-size:.78rem;cursor:pointer;transition:background .12s;}
+.ctx-item:hover{background:var(--bg);}
+.ctx-item .ci{font-size:.85rem;width:16px;text-align:center;}
+.ctx-item.danger{color:#c03030;}
+.ctx-item.danger:hover{background:#fff0f0;}
+.ctx-sep{height:1px;background:var(--border);margin:.2rem 0;}
+
+/* edge edit popup */
+.edge-popup{position:fixed;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.15);z-index:1000;padding:.7rem .9rem;min-width:200px;animation:popIn .12s ease;}
+.edge-popup h4{font-size:.75rem;font-weight:700;color:var(--gd);margin-bottom:.55rem;display:flex;align-items:center;gap:.3rem;}
+.ep-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;}
+.ep-row label{font-size:.72rem;color:var(--muted);width:52px;flex-shrink:0;}
+.ep-row input{width:60px;border:1.5px solid var(--border);border-radius:5px;padding:.25rem .4rem;font-family:'DM Mono',monospace;font-size:.82rem;text-align:center;outline:none;color:var(--text);}
+.ep-row input:focus{border-color:var(--gm);}
+.ep-row span{font-size:.7rem;color:var(--muted);}
+.ep-btns{display:flex;gap:.4rem;margin-top:.55rem;}
+.ep-btn{flex:1;padding:.28rem;border-radius:6px;font-size:.72rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;cursor:pointer;border:1.5px solid;transition:.15s;}
+.ep-btn.save{background:var(--gd);color:#fff;border-color:var(--gd);}
+.ep-btn.save:hover{background:#1a5a1a;}
+.ep-btn.del{background:#fff;color:#c03030;border-color:#e0a0a0;}
+.ep-btn.del:hover{background:#fff0f0;}
+.ep-btn.cancel{background:#fff;color:var(--muted);border-color:var(--border);}
+
+/* node name edit popup */
+.name-popup{position:fixed;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.15);z-index:1000;padding:.7rem .9rem;min-width:200px;animation:popIn .12s ease;}
+.name-popup h4{font-size:.75rem;font-weight:700;color:var(--gd);margin-bottom:.5rem;}
+.name-popup input[type=text]{width:100%;border:1.5px solid var(--border);border-radius:5px;padding:.3rem .5rem;font-size:.82rem;font-family:'Noto Sans TC',sans-serif;outline:none;color:var(--text);margin-bottom:.4rem;}
+.name-popup input[type=text]:focus{border-color:var(--gm);}
+
+/* timeline */
+.timeline-panel{background:#fff;border-radius:12px;border:2px solid var(--border);box-shadow:0 3px 14px rgba(0,0,0,.08);padding:.9rem 1.1rem;width:210px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;}
+.timeline-panel h3{font-size:.73rem;font-weight:700;color:var(--gd);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.65rem;padding-bottom:.4rem;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:.3rem;}
+.tl-list{display:flex;flex-direction:column;flex:1;overflow-y:auto;}
+.tl-item{display:flex;align-items:stretch;}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0;}
+.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--cnb);background:#fff;flex-shrink:0;margin-top:6px;}
+.tl-dot.peak{border-color:var(--cpb);background:var(--cp);}
+.tl-dot.camp{border-color:var(--ccb);background:var(--cc);}
+.tl-dot.start{border-color:var(--csb);background:var(--cs);width:12px;height:12px;margin-top:5px;}
+.tl-dot.water{border-color:var(--cwb);background:var(--cw);}
+.tl-line{width:2px;flex:1;min-height:8px;background:linear-gradient(to bottom,var(--border) 60%,transparent);margin-top:2px;}
+.tl-right{flex:1;padding:.28rem 0 .5rem .35rem;}
+.tl-time{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:700;color:var(--ct);line-height:1;}
+.tl-name{font-size:.72rem;color:var(--text);font-weight:600;margin-top:2px;line-height:1.3;}
+.tl-dur{font-size:.62rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px;}
+.tl-rest{font-size:.62rem;color:#c07030;font-weight:600;font-family:'DM Mono',monospace;margin-top:1px;}
+.copy-btn{width:100%;margin-top:.6rem;padding:.35rem;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;font-size:.7rem;color:var(--gd);font-family:'Noto Sans TC',sans-serif;cursor:pointer;font-weight:600;transition:.2s;flex-shrink:0;}
+.copy-btn:hover{background:var(--cs);border-color:var(--csb);}
+
+/* legend */
+.legend{display:flex;gap:.7rem;flex-wrap:wrap;font-size:.68rem;color:var(--muted);}
+.li{display:flex;align-items:center;gap:.25rem;}
+.ld{width:9px;height:9px;border-radius:50%;border:2px solid;}
+
+/* config */
+.config-section{padding:0 1rem 1.5rem;}
+.config-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem;}
+.config-header h2{font-size:.82rem;font-weight:700;color:var(--gd);display:flex;align-items:center;gap:.35rem;}
+.config-btns{display:flex;gap:.4rem;}
+.cbtn{padding:.28rem .7rem;border-radius:6px;font-size:.72rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;cursor:pointer;transition:.2s;border:1.5px solid;}
+.cbtn.apply{background:var(--gd);color:#fff;border-color:var(--gd);}
+.cbtn.apply:hover{background:#1a5a1a;}
+.cbtn.reset{background:#fff;color:var(--muted);border-color:var(--border);}
+.cbtn.reset:hover{background:var(--bg);}
+.cbtn.export{background:#fff;color:var(--gd);border-color:var(--gm);}
+.cbtn.export:hover{background:var(--cs);}
+#cfgEditor{width:100%;min-height:200px;font-family:'DM Mono',monospace;font-size:.76rem;border:2px solid var(--border);border-radius:9px;padding:.7rem .9rem;background:#f8fdf8;color:var(--text);resize:vertical;outline:none;line-height:1.6;transition:border-color .2s;}
+#cfgEditor:focus{border-color:var(--gm);}
+#cfgEditor.err{border-color:#e03030;background:#fff5f5;}
+.cfg-status{font-size:.7rem;margin-top:.3rem;font-family:'DM Mono',monospace;height:1rem;}
+.cfg-status.ok{color:var(--gd);}
+.cfg-status.err{color:#c03030;}
+.cfg-hint{font-size:.7rem;color:var(--muted);margin-top:.25rem;line-height:1.5;}
+.cfg-hint code{background:#e8f4e8;padding:1px 4px;border-radius:3px;font-family:'DM Mono',monospace;}
+/* ── Template picker ── */
+.tpl-wrap{position:relative;}
+.cbtn.tpl{background:#fff;color:#5a3a8a;border-color:#b090d0;}
+.cbtn.tpl:hover{background:#f5f0ff;}
+.tpl-menu{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.13);z-index:200;min-width:190px;overflow:hidden;animation:popIn .12s ease;}
+.tpl-item{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem;font-size:.78rem;cursor:pointer;transition:background .12s;white-space:nowrap;}
+.tpl-item:hover{background:var(--bg);}
+.tpl-item .ti{font-size:.85rem;}
+.tpl-loading{padding:.5rem .8rem;font-size:.75rem;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="top-section" id="topSection">
+<header>
+  <h1>⛰ 登山時間計算器</h1>
+  <p>點擊地圖空白處新增節點・點擊節點編輯/連線/刪除・拖曳移動</p>
+</header>
+<div class="controls">
+  <div class="cg">
+    <label>📍 出發</label>
+    <input type="time" id="T" value="06:00">
+    <button onclick="document.getElementById('T').value='06:00';redraw();" style="background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:.25rem .5rem;font-size:.7rem;color:var(--muted);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:600;transition:.2s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='#fff'">↺ 06:00</button>
+  </div>
+  <div class="cg">
+    <label>🏃 速度</label>
+    <input type="range" id="M" min="0.5" max="2" step="0.1" value="1">
+    <span class="mv" id="MV">1.0×</span>
+  </div>
+  <!-- <div class="cg">
+    <label>方向</label>
+    <div class="dt">
+      <button id="BU" class="on" onclick="setDir('up')">↑ 上坡</button>
+      <button id="BD" onclick="setDir('down')">↓ 下坡</button>
+    </div>
+  </div> -->
+  <div class="cg">
+    <span class="mode-badge normal" id="modeBadge">一般模式</span>
+  </div>
+</div>
+</div>
+
+<div class="map-section" id="mainLayout">
+  <div class="map-col">
+    <div class="map-outer" id="MO">
+      <svg id="cvs"></svg>
+      <div id="NL"></div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:var(--cp);border-color:var(--cpb)"></div>山峰</div>
+      <div class="li"><div class="ld" style="background:var(--cc);border-color:var(--ccb)"></div>山屋</div>
+      <div class="li"><div class="ld" style="background:var(--cn);border-color:var(--cnb)"></div>節點</div>
+      <div class="li"><div class="ld" style="background:var(--cs);border-color:var(--csb)"></div>出發點</div>
+      <div class="li"><div class="ld" style="background:var(--cw);border-color:var(--cwb)"></div>瀑布</div>
+      <div class="li" style="margin-left:.5rem;color:var(--muted);font-size:.68rem;">💡 點空白＝新增・點節點＝選單・再點另一節點＝連線</div>
+    </div>
+  </div>
+  <div class="timeline-panel">
+    <h3>🕐 行程時刻表</h3>
+    <div class="tl-list" id="TL"></div>
+    <button class="copy-btn" id="CBTN" onclick="copyTimeline()">📋 複製文字</button>
+  </div>
+</div>
+
+<div class="config-section">
+  <div class="config-header">
+    <h2>⚙️ 路線設定（JSON）</h2>
+    <div class="config-btns">
+      <button class="cbtn apply" onclick="applyConfig()">▶ 套用</button>
+      <button class="cbtn export" onclick="exportConfig()">↓ 匯出位置</button>
+      <button class="cbtn reset" onclick="resetConfig()">↺ 還原預設</button>
+      <div class="tpl-wrap">
+        <button class="cbtn tpl" onclick="toggleTplMenu()">📂 使用範本 ▾</button>
+        <div class="tpl-menu" id="tplMenu" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+  <textarea id="cfgEditor" spellcheck="false"></textarea>
+  <div class="cfg-status" id="cfgStatus"></div>
+  <div class="cfg-hint"><b>nodes</b>：<code>id</code> <code>name</code> <code>x</code> <code>y</code> <code>type</code>（start/peak/camp/water/node）・<b>edges</b>：<code>a</code> <code>b</code> <code>up</code> <code>dn</code>（分鐘）・按 <code>Ctrl+Enter</code> 套用</div>
+</div>
+
+<script>
+/* ══════════ DEFAULT CONFIG ══════════ */
+const DEFAULT_CONFIG = {
+  canvasWidth:720, canvasHeight:570, startNode:"wuling",
+  nodes:[
+    {id:"wuling", name:"出發點", x:360, y:285, type:"start"}
+  ],
+  edges:[]
+};
+
+/* ── TEMPLATES list (filename → label) ── */
+const TEMPLATES = [
+  {label:"桃山喀拉業", file:"https://github.com/jyery30120/jyery30120.github.io/blob/master/static/prach.json"}
+  // 新增範本：{label:"某路線", file:"/static/xxx.json"}
+];
+
+/* ══════════ STATE ══════════ */
+let cfg = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+let direction='up', mult=1.0;
+let selectedId = null;   // node being connected FROM
+let connectMode = false;
+let scaleX=1, scaleY=1;
+let uidCounter = 100;
+
+/* ══════════ UTILS ══════════ */
+function uid(){ return 'n'+(++uidCounter); }
+function parseStart(){ const[h,m]=document.getElementById('T').value.split(':').map(Number);return h*60+m; }
+function fmt(m){ const t=((m%1440)+1440)%1440;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }
+function nodeMap(){ const m={};cfg.nodes.forEach(n=>m[n.id]=n);return m; }
+function sx(x){return x*scaleX;} function sy(y){return y*scaleY;}
+function ux(x){return x/scaleX;} function uy(y){return y/scaleY;}
+
+/* ══════════ BFS ══════════ */
+function computeTimes(){
+  const nm=nodeMap();
+  const t={};t[cfg.startNode]=parseStart();
+  const q=[cfg.startNode],vis=new Set([cfg.startNode]);
+  while(q.length){
+    const cur=q.shift(),ct=t[cur];
+    const restMin=(nm[cur]?.rest)||0;
+    for(const e of cfg.edges){
+      let next,raw;
+      // upFrom: 明確標記上坡起點（低處）；若無則 a=低處（舊版相容）
+      const lowNode = e.upFrom || e.a;
+      const highNode = lowNode===e.a ? e.b : e.a;
+      if(cur===lowNode){ next=highNode; raw=direction==='up'?e.up:e.dn; }
+      else if(cur===highNode){ next=lowNode; raw=direction==='up'?e.dn:e.up; }
+      else continue;
+      if(vis.has(next))continue;
+      t[next]=ct+restMin+Math.round(raw*mult);
+      vis.add(next);q.push(next);
+    }
+  }
+  return t;
+}
+
+/* ══════════ RENDER ══════════ */
+function redraw(updateEditor=true){
+  const mo=document.getElementById('MO');
+  const W=mo.clientWidth||cfg.canvasWidth;
+  const H=mo.clientHeight||cfg.canvasHeight;
+  scaleX=W/cfg.canvasWidth; scaleY=H/cfg.canvasHeight;
+  const times=computeTimes();
+  drawEdges(times,W,H);
+  drawNodes(times);
+  renderTimeline(times);
+  if(updateEditor)syncEditor();
+}
+
+/* ── SVG edges ── */
+function drawEdges(times,W,H){
+  const svg=document.getElementById('cvs');
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML='';
+
+  // Define arrowhead marker (green for edges)
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  const marker=document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id','arrow');
+  marker.setAttribute('markerWidth','7');marker.setAttribute('markerHeight','7');
+  marker.setAttribute('refX','6');marker.setAttribute('refY','2.5');
+  marker.setAttribute('orient','auto');
+  const arrowPath=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  arrowPath.setAttribute('points','0 0, 7 2.5, 0 5');
+  arrowPath.setAttribute('fill','#5a8a5a');arrowPath.setAttribute('opacity','0.85');
+  marker.appendChild(arrowPath);defs.appendChild(marker);
+  // orange arrow for preview
+  const markerO=document.createElementNS('http://www.w3.org/2000/svg','marker');
+  markerO.setAttribute('id','arrow-orange');
+  markerO.setAttribute('markerWidth','7');markerO.setAttribute('markerHeight','7');
+  markerO.setAttribute('refX','6');markerO.setAttribute('refY','2.5');
+  markerO.setAttribute('orient','auto');
+  const arrowO=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  arrowO.setAttribute('points','0 0, 7 2.5, 0 5');
+  arrowO.setAttribute('fill','#e08030');
+  markerO.appendChild(arrowO);defs.appendChild(markerO);
+  svg.appendChild(defs);
+
+  const nm=nodeMap();
+
+  for(const e of cfg.edges){
+    const na=nm[e.a],nb=nm[e.b];
+    if(!na||!nb)continue;
+
+    // arrow points from a → b (a=低處, b=高處，箭頭朝上坡)
+    const x1=sx(na.x),y1=sy(na.y),x2=sx(nb.x),y2=sy(nb.y);
+    // shorten line endpoints so arrow doesn't overlap node bubble
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1;
+    const pad=22;
+    const ax1=x1+dx/len*pad, ay1=y1+dy/len*pad;
+    const ax2=x2-dx/len*pad, ay2=y2-dy/len*pad;
+
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',ax1);line.setAttribute('y1',ay1);
+    line.setAttribute('x2',ax2);line.setAttribute('y2',ay2);
+    line.setAttribute('stroke','#5a8a5a');line.setAttribute('stroke-width','2.2');
+    line.setAttribute('opacity','0.75');
+    line.style.cursor='pointer';
+    line.style.pointerEvents='stroke';
+    const ea=e.a,eb=e.b;
+    line.addEventListener('click',ev=>{ev.stopPropagation();showEdgePopup(ea,eb,ev);});
+    // thicker hit area
+    const hit=document.createElementNS('http://www.w3.org/2000/svg','line');
+    hit.setAttribute('x1',x1);hit.setAttribute('y1',y1);
+    hit.setAttribute('x2',x2);hit.setAttribute('y2',y2);
+    hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','12');
+    hit.style.cursor='pointer';
+    hit.addEventListener('click',ev=>{ev.stopPropagation();showEdgePopup(ea,eb,ev);});
+    svg.appendChild(line);svg.appendChild(hit);
+
+    // label (offset perpendicular to line)
+    const mx=(x1+x2)/2,my=(y1+y2)/2;
+    const ox=0,oy=0;
+    const lbl=e.up===e.dn?`${Math.round(e.up*mult)}分`:`↑${Math.round(e.up*mult)} ↓${Math.round(e.dn*mult)}`;
+    const tw=lbl.length*6.8+12;
+    const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    bg.setAttribute('x',mx+ox-tw/2);bg.setAttribute('y',my+oy-13);
+    bg.setAttribute('width',tw);bg.setAttribute('height',16);
+    bg.setAttribute('rx',3);bg.setAttribute('fill','rgba(255,255,255,0.93)');
+    bg.setAttribute('stroke','#c0d8c0');bg.setAttribute('stroke-width','1');
+    bg.style.cursor='pointer';
+    bg.addEventListener('click',ev=>{ev.stopPropagation();showEdgePopup(ea,eb,ev);});
+    const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',mx+ox);txt.setAttribute('y',my+oy);
+    txt.setAttribute('text-anchor','middle');txt.setAttribute('dominant-baseline','middle');
+    txt.setAttribute('font-size','11');txt.setAttribute('font-family','DM Mono,monospace');
+    txt.setAttribute('fill','#2a5a2a');txt.setAttribute('font-weight','600');
+    txt.textContent=lbl;txt.style.cursor='pointer';
+    txt.addEventListener('click',ev=>{ev.stopPropagation();showEdgePopup(ea,eb,ev);});
+    svg.appendChild(bg);svg.appendChild(txt);
+  }
+
+  // preview line while connecting
+  if(connectMode&&selectedId){
+    const na=nm[selectedId];
+    if(na){
+      const pl=document.createElementNS('http://www.w3.org/2000/svg','line');
+      pl.id='previewLine';
+      pl.setAttribute('x1',sx(na.x));pl.setAttribute('y1',sy(na.y));
+      pl.setAttribute('x2',sx(na.x));pl.setAttribute('y2',sy(na.y));
+      pl.setAttribute('stroke','#e08030');pl.setAttribute('stroke-width','2');
+      pl.setAttribute('stroke-dasharray','6,3');pl.setAttribute('opacity','0.8');
+      pl.setAttribute('marker-end','url(#arrow-orange)');
+      svg.appendChild(pl);
+    }
+  }
+}
+
+/* ── DOM nodes ── */
+function drawNodes(times){
+  const nl=document.getElementById('NL');
+  nl.innerHTML='';
+  for(const nd of cfg.nodes){
+    const wrap=document.createElement('div');
+    wrap.className='nd'+(selectedId===nd.id&&connectMode?' selected':'');
+    wrap.id='nd-'+nd.id;
+    wrap.style.left=sx(nd.x)+'px';
+    wrap.style.top=sy(nd.y)+'px';
+    const box=document.createElement('div');
+    box.className=`nb ${nd.type||'node'}`;
+    const nm2=document.createElement('div');nm2.className='nn';nm2.textContent=nd.name;
+    box.appendChild(nm2);
+    const tm=document.createElement('div');tm.className='nt';
+    tm.textContent=times[nd.id]!==undefined?fmt(times[nd.id]):'--:--';
+    box.appendChild(tm);
+    if(nd.rest&&nd.rest>0){const rEl=document.createElement('div');rEl.className='nr';rEl.textContent=`休 ${nd.rest} 分`;box.appendChild(rEl);}
+    wrap.appendChild(box);
+    attachNodeEvents(wrap,nd.id);
+    nl.appendChild(wrap);
+  }
+}
+
+/* ══════════ NODE INTERACTIONS ══════════ */
+let dragState=null;
+let lastClickTime=0, lastClickId=null;
+
+function attachNodeEvents(el,id){
+  let moved=false;
+
+  el.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
+    e.stopPropagation();
+    moved=false;
+    dragState={id,startX:e.clientX,startY:e.clientY,origX:cfg.nodes.find(n=>n.id===id).x,origY:cfg.nodes.find(n=>n.id===id).y,scaleX,scaleY};
+    el.classList.add('dragging');
+  });
+
+  el.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(moved){moved=false;return;}
+    // connect mode: clicking another node
+    if(connectMode&&selectedId&&selectedId!==id){
+      finishConnect(id);
+      return;
+    }
+    // single click → show menu
+    showNodeMenu(id,e);
+  });
+}
+
+document.addEventListener('mousemove',e=>{
+  // preview line
+  if(connectMode&&selectedId){
+    const pl=document.getElementById('previewLine');
+    if(pl){
+      const mo=document.getElementById('MO');
+      const r=mo.getBoundingClientRect();
+      pl.setAttribute('x2',e.clientX-r.left);
+      pl.setAttribute('y2',e.clientY-r.top);
+    }
+  }
+  if(!dragState)return;
+  const dx=(e.clientX-dragState.startX)/dragState.scaleX;
+  const dy=(e.clientY-dragState.startY)/dragState.scaleY;
+  if(Math.abs(dx)>3||Math.abs(dy)>3){
+    if(dragState){const n=cfg.nodes.find(n=>n.id===dragState.id);if(n){n.x=Math.max(30,Math.min(dragState.origX+dx,cfg.canvasWidth-30));n.y=Math.max(20,Math.min(dragState.origY+dy,cfg.canvasHeight-20));dragState._moved=true;}}
+    redraw(false);
+  }
+});
+
+document.addEventListener('mouseup',e=>{
+  if(dragState){
+    if(dragState._moved){/* drag ended */}
+    document.querySelectorAll('.nd.dragging').forEach(el=>el.classList.remove('dragging'));
+    dragState=null;
+  }
+});
+
+/* Click on empty canvas → add node menu */
+document.getElementById('MO').addEventListener('click',e=>{
+  // Nodes and edges call stopPropagation, so this handler only fires for background clicks
+  if(e.target.closest('.nd'))return;
+  e.stopPropagation(); // prevent document handler from closing the menu we're about to open
+  closeAllPopups();
+  if(connectMode){endConnectMode();return;}
+  const r=e.currentTarget.getBoundingClientRect();
+  showAddNodeMenu(ux(e.clientX-r.left),uy(e.clientY-r.top),e.clientX,e.clientY);
+});
+
+/* Mousemove on canvas for preview */
+document.getElementById('MO').addEventListener('mousemove',e=>{
+  if(!connectMode||!selectedId)return;
+  const pl=document.getElementById('previewLine');
+  if(pl){const r=document.getElementById('MO').getBoundingClientRect();pl.setAttribute('x2',e.clientX-r.left);pl.setAttribute('y2',e.clientY-r.top);}
+});
+
+/* ══════════ CONTEXT MENUS ══════════ */
+function closeAllPopups(){
+  document.querySelectorAll('.ctx-menu,.edge-popup,.name-popup').forEach(el=>el.remove());
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ctx-menu,.edge-popup,.name-popup,.nd'))closeAllPopups();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAllPopups();if(connectMode)endConnectMode();}});
+
+/* ── Add node menu (click on empty canvas) ── */
+function showAddNodeMenu(cx,cy,px,py){
+  closeAllPopups();
+  const menu=document.createElement('div');menu.className='ctx-menu';
+  menu.style.left=px+'px';menu.style.top=py+'px';
+  const title=document.createElement('div');title.className='ctx-title';title.textContent='新增節點';
+  menu.appendChild(title);
+  const types=[
+    {type:'peak', icon:'🏔',label:'山峰'},
+    {type:'camp', icon:'🏠',label:'山屋 / 水塘'},
+    {type:'node', icon:'📍',label:'路段節點'},
+    {type:'start',icon:'🚩',label:'出發點'},
+    {type:'water',icon:'💧',label:'瀑布 / 景點'},
+  ];
+  for(const t of types){
+    const item=document.createElement('div');item.className='ctx-item';
+    item.innerHTML=`<span class="ci">${t.icon}</span>${t.label}`;
+    item.addEventListener('click',()=>{
+      closeAllPopups();
+      showNameInputPopup(px,py,(name)=>{
+        const id=uid();
+        cfg.nodes.push({id,name,x:cx,y:cy,type:t.type});
+        redraw();
+      });
+    });
+    menu.appendChild(item);
+  }
+  document.body.appendChild(menu);
+  clampPopup(menu,px,py);
+}
+
+/* ── Node context menu ── */
+const TYPE_LABELS={peak:'山峰',camp:'山屋/水塘',node:'路段節點',start:'出發點',water:'瀑布/景點'};
+const TYPE_ICONS ={peak:'🏔',camp:'🏠',node:'📍',start:'🚩',water:'💧'};
+
+function showNodeMenu(id,e){
+  closeAllPopups();
+  const nd=cfg.nodes.find(n=>n.id===id);if(!nd)return;
+  const px=e.clientX,py=e.clientY;
+  const menu=document.createElement('div');menu.className='ctx-menu';
+  menu.style.left=px+'px';menu.style.top=py+'px';
+
+  const title=document.createElement('div');title.className='ctx-title';
+  title.textContent=nd.name.replace(/\n/g,' ');
+  menu.appendChild(title);
+
+  // Connect
+  const conn=document.createElement('div');conn.className='ctx-item';
+  conn.innerHTML=`<span class="ci">🔗</span>連接到另一節點…`;
+  conn.addEventListener('click',()=>{closeAllPopups();startConnectMode(id);});
+  menu.appendChild(conn);
+
+  // Rename
+  const ren=document.createElement('div');ren.className='ctx-item';
+  ren.innerHTML=`<span class="ci">✏️</span>重新命名`;
+  ren.addEventListener('click',()=>{
+    closeAllPopups();
+    showNameInputPopup(px,py,(name)=>{nd.name=name;redraw();},nd.name);
+  });
+  menu.appendChild(ren);
+
+  // Rest time
+  const restItem=document.createElement('div');restItem.className='ctx-item';
+  const curRest=nd.rest||0;
+  restItem.innerHTML=`<span class="ci">☕</span>休息時間${curRest>0?' ('+curRest+'分)':''}`;
+  restItem.addEventListener('click',()=>{
+    closeAllPopups();
+    showRestPopup(id,px,py);
+  });
+  menu.appendChild(restItem);
+
+  // Change type submenu
+  const typeRow=document.createElement('div');typeRow.className='ctx-item';
+  typeRow.innerHTML=`<span class="ci">🎨</span>變更類型`;
+  typeRow.addEventListener('click',()=>{
+    closeAllPopups();
+    showTypeMenu(id,px,py);
+  });
+  menu.appendChild(typeRow);
+
+  // Set as start
+  if(nd.type!=='start'){
+    const setStart=document.createElement('div');setStart.className='ctx-item';
+    setStart.innerHTML=`<span class="ci">🚩</span>設為出發點`;
+    setStart.addEventListener('click',()=>{
+      closeAllPopups();
+      showSetStartMenu(id,px,py);
+    });
+    menu.appendChild(setStart);
+  }
+
+  menu.appendChild(Object.assign(document.createElement('div'),{className:'ctx-sep'}));
+
+  // Delete
+  const del=document.createElement('div');del.className='ctx-item danger';
+  del.innerHTML=`<span class="ci">🗑</span>刪除節點`;
+  del.addEventListener('click',()=>{
+    cfg.nodes=cfg.nodes.filter(n=>n.id!==id);
+    cfg.edges=cfg.edges.filter(e=>e.a!==id&&e.b!==id);
+    if(cfg.startNode===id&&cfg.nodes.length)cfg.startNode=cfg.nodes[0].id;
+    closeAllPopups();redraw();
+  });
+  menu.appendChild(del);
+
+  document.body.appendChild(menu);
+  clampPopup(menu,px,py);
+}
+
+function showTypeMenu(id,px,py){
+  closeAllPopups();
+  const nd=cfg.nodes.find(n=>n.id===id);if(!nd)return;
+  const menu=document.createElement('div');menu.className='ctx-menu';
+  menu.style.left=px+'px';menu.style.top=py+'px';
+  const title=document.createElement('div');title.className='ctx-title';title.textContent='選擇類型';
+  menu.appendChild(title);
+  const types=[
+    {type:'peak',icon:'🏔',label:'山峰'},
+    {type:'camp',icon:'🏠',label:'山屋/水塘'},
+    {type:'node',icon:'📍',label:'路段節點'},
+    {type:'start',icon:'🚩',label:'出發點'},
+    {type:'water',icon:'💧',label:'瀑布/景點'},
+  ];
+  for(const t of types){
+    const item=document.createElement('div');item.className='ctx-item';
+    item.innerHTML=`<span class="ci">${t.icon}</span>${t.label}${nd.type===t.type?' ✓':''}`;
+    item.addEventListener('click',()=>{
+      if(t.type==='start'){cfg.nodes.forEach(n=>{if(n.type==='start')n.type='node';});cfg.startNode=id;}
+      nd.type=t.type;closeAllPopups();redraw();
+    });
+    menu.appendChild(item);
+  }
+  document.body.appendChild(menu);
+  clampPopup(menu,px,py);
+}
+
+
+/* ── Set start node submenu ── */
+function showSetStartMenu(id,px,py){
+  closeAllPopups();
+  const nd=cfg.nodes.find(n=>n.id===id);if(!nd)return;
+  const times=computeTimes();
+  const arrivalMin=times[id];
+  const hasArrival=arrivalMin!==undefined;
+
+  const menu=document.createElement('div');menu.className='ctx-menu';
+  menu.style.left=px+'px';menu.style.top=py+'px';
+
+  const title=document.createElement('div');title.className='ctx-title';
+  title.textContent='設為出發點・出發時間';
+  menu.appendChild(title);
+
+  const curTimeStr=document.getElementById('T').value;
+  const opt1=document.createElement('div');opt1.className='ctx-item';
+  opt1.innerHTML=`<span class="ci">⏰</span><span>使用出發時間 <b style="font-family:'DM Mono',monospace">${curTimeStr}</b></span>`;
+  opt1.addEventListener('click',()=>{
+    cfg.nodes.forEach(n=>{if(n.type==='start')n.type='node';});
+    nd.type='start';cfg.startNode=id;
+    closeAllPopups();redraw();
+  });
+  menu.appendChild(opt1);
+
+  const opt2=document.createElement('div');opt2.className='ctx-item';
+  if(hasArrival){
+    const arrStr=fmt(arrivalMin);
+    opt2.innerHTML=`<span class="ci">🕐</span><span>使用抵達時間 <b style="font-family:'DM Mono',monospace">${arrStr}</b></span>`;
+    opt2.addEventListener('click',()=>{
+      const total=((arrivalMin%1440)+1440)%1440;
+      const h=Math.floor(total/60),m=total%60;
+      document.getElementById('T').value=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+      cfg.nodes.forEach(n=>{if(n.type==='start')n.type='node';});
+      nd.type='start';cfg.startNode=id;
+      closeAllPopups();redraw();
+    });
+  } else {
+    opt2.innerHTML=`<span class="ci">🕐</span><span style="color:var(--muted)">使用抵達時間（無法計算）</span>`;
+    opt2.style.opacity='0.45';opt2.style.pointerEvents='none';
+  }
+  menu.appendChild(opt2);
+
+  const opt3=document.createElement('div');opt3.className='ctx-item';
+  opt3.innerHTML=`<span class="ci">🔄</span><span>使用預設時間 <b style="font-family:'DM Mono',monospace">06:00</b></span>`;
+  opt3.addEventListener('click',()=>{
+    document.getElementById('T').value='06:00';
+    cfg.nodes.forEach(n=>{if(n.type==='start')n.type='node';});
+    nd.type='start';cfg.startNode=id;
+    closeAllPopups();redraw();
+  });
+  menu.appendChild(opt3);
+
+  document.body.appendChild(menu);
+  clampPopup(menu,px,py);
+}
+
+/* ── Name input popup ── */
+function showNameInputPopup(px,py,onConfirm,initialValue=''){
+  closeAllPopups();
+  const popup=document.createElement('div');popup.className='name-popup';
+  popup.style.left=px+'px';popup.style.top=py+'px';
+  const h=document.createElement('h4');h.textContent='節點名稱';popup.appendChild(h);
+  const inp=document.createElement('input');inp.type='text';inp.value=initialValue;
+  inp.placeholder='輸入名稱（換行用 \\n）';
+  popup.appendChild(inp);
+  const btns=document.createElement('div');btns.style.cssText='display:flex;gap:.4rem;';
+  const ok=document.createElement('button');ok.className='ep-btn save';ok.textContent='確定';
+  const cancel=document.createElement('button');cancel.className='ep-btn cancel';cancel.textContent='取消';
+  ok.addEventListener('click',()=>{
+    const name=inp.value.trim().replace(/\\n/g,'\n')||'節點';
+    closeAllPopups();onConfirm(name);
+  });
+  cancel.addEventListener('click',()=>closeAllPopups());
+  btns.appendChild(ok);btns.appendChild(cancel);
+  popup.appendChild(btns);
+  document.body.appendChild(popup);
+  inp.focus();inp.select();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ok.click();}});
+  clampPopup(popup,px,py);
+}
+
+/* ── Rest time popup ── */
+function showRestPopup(id,px,py){
+  closeAllPopups();
+  const nd=cfg.nodes.find(n=>n.id===id);if(!nd)return;
+  const popup=document.createElement('div');popup.className='edge-popup';
+  popup.style.left=px+'px';popup.style.top=py+'px';
+  popup.innerHTML=`<h4>☕ 休息時間：${nd.name.replace(/\n/g,' ')}</h4>
+    <div class="ep-row"><label>休息</label><input id="rst" type="number" min="0" max="999" value="${nd.rest||0}"><span>分鐘</span></div>`;
+  const btns=document.createElement('div');btns.className='ep-btns';
+  const save=document.createElement('button');save.className='ep-btn save';save.textContent='儲存';
+  const cancel=document.createElement('button');cancel.className='ep-btn cancel';cancel.textContent='取消';
+  save.addEventListener('click',()=>{
+    nd.rest=parseInt(popup.querySelector('#rst').value)||0;
+    closeAllPopups();redraw();
+  });
+  cancel.addEventListener('click',()=>closeAllPopups());
+  btns.appendChild(save);btns.appendChild(cancel);
+  popup.appendChild(btns);
+  document.body.appendChild(popup);
+  const inp=popup.querySelector('#rst');inp.focus();inp.select();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save.click();}});
+  clampPopup(popup,px,py);
+}
+
+/* ── Edge edit popup ── */
+function showEdgePopup(ea,eb,e){
+  closeAllPopups();
+  const edge=cfg.edges.find(ed=>(ed.a===ea&&ed.b===eb)||(ed.a===eb&&ed.b===ea));
+  if(!edge)return;
+  const nm=nodeMap();
+  const px=e.clientX,py=e.clientY;
+  const popup=document.createElement('div');popup.className='edge-popup';
+  popup.style.left=px+'px';popup.style.top=py+'px';
+
+  const refreshHeader=()=>{
+    const nA=(nm[edge.a]?.name||edge.a).replace(/\n/g,' ');
+    const nB=(nm[edge.b]?.name||edge.b).replace(/\n/g,' ');
+    popup.querySelector('h4').innerHTML=`🔗 ${nA} <span style="color:var(--gd)">↔</span> ${nB}<br><small style="font-size:.65rem;color:var(--muted);font-weight:400">↑ 上坡方向：${nA} → ${nB}</small>`;
+    popup.querySelector('#flipBtn').textContent=`⇄ 對調上坡方向：${nB} → ${nA}`;
+  };
+
+  popup.innerHTML=`<h4></h4>
+    <div class="ep-row"><label>↑ 上坡</label><input id="eup" type="number" min="0" max="999" value="${edge.up}"><span>分鐘</span></div>
+    <div class="ep-row"><label>↓ 下坡</label><input id="edn" type="number" min="0" max="999" value="${edge.dn}"><span>分鐘</span></div>
+    <div style="margin:.3rem 0 .1rem"><button id="flipBtn" class="ep-btn cancel" style="width:100%;font-size:.7rem"></button></div>`;
+
+  refreshHeader();
+  popup.querySelector('#flipBtn').addEventListener('click',()=>{
+    const tmp=edge.a; edge.a=edge.b; edge.b=tmp;
+    refreshHeader(); redraw(false);
+  });
+
+  const btns=document.createElement('div');btns.className='ep-btns';
+  const save=document.createElement('button');save.className='ep-btn save';save.textContent='儲存';
+  const del=document.createElement('button');del.className='ep-btn del';del.textContent='刪除連線';
+  const cancel=document.createElement('button');cancel.className='ep-btn cancel';cancel.textContent='取消';
+  save.addEventListener('click',()=>{
+    edge.up=parseInt(popup.querySelector('#eup').value)||0;
+    edge.dn=parseInt(popup.querySelector('#edn').value)||0;
+    closeAllPopups();redraw();
+  });
+  del.addEventListener('click',()=>{
+    cfg.edges=cfg.edges.filter(ed=>!((ed.a===ea&&ed.b===eb)||(ed.a===eb&&ed.b===ea)));
+    closeAllPopups();redraw();
+  });
+  cancel.addEventListener('click',()=>closeAllPopups());
+  btns.appendChild(save);btns.appendChild(del);btns.appendChild(cancel);
+  popup.appendChild(btns);
+  document.body.appendChild(popup);
+  clampPopup(popup,px,py);
+}
+
+/* ── Connect mode ── */
+function startConnectMode(fromId){
+  connectMode=true;selectedId=fromId;
+  document.getElementById('MO').classList.add('connect-mode');
+  document.getElementById('modeBadge').className='mode-badge connect';
+  document.getElementById('modeBadge').textContent='連線模式・點擊目標節點';
+  redraw(false);
+}
+function endConnectMode(){
+  connectMode=false;selectedId=null;
+  document.getElementById('MO').classList.remove('connect-mode');
+  document.getElementById('modeBadge').className='mode-badge normal';
+  document.getElementById('modeBadge').textContent='一般模式';
+  redraw(false);
+}
+function finishConnect(toId){
+  const exists=cfg.edges.find(e=>(e.a===selectedId&&e.b===toId)||(e.a===toId&&e.b===selectedId));
+  if(!exists){
+    // Ask for times
+    const fromId=selectedId;
+    endConnectMode();
+    // Show popup to set times
+    const mo=document.getElementById('MO');
+    const r=mo.getBoundingClientRect();
+    const nm=nodeMap();
+    const na=nm[fromId],nb=nm[toId];
+    const midX=r.left+sx((na.x+nb.x)/2);
+    const midY=r.top+sy((na.y+nb.y)/2);
+    showNewEdgePopup(fromId,toId,midX,midY);
+  } else {
+    endConnectMode();
+  }
+}
+
+function showNewEdgePopup(fromId,toId,px,py){
+  closeAllPopups();
+  const nm=nodeMap();
+  const nameA=(nm[fromId]?.name||fromId).replace(/\n/g,' ');
+  const nameB=(nm[toId]?.name||toId).replace(/\n/g,' ');
+  const popup=document.createElement('div');popup.className='edge-popup';
+  popup.style.left=px+'px';popup.style.top=py+'px';
+  popup.innerHTML=`<h4>🔗 新連線：${nameA} ↔ ${nameB}</h4>
+    <div class="ep-row"><label>↑ 上坡</label><input id="neup" type="number" min="0" max="999" value="30"><span>分鐘</span></div>
+    <div class="ep-row"><label>↓ 下坡</label><input id="nedn" type="number" min="0" max="999" value="20"><span>分鐘</span></div>`;
+  const btns=document.createElement('div');btns.className='ep-btns';
+  const save=document.createElement('button');save.className='ep-btn save';save.textContent='新增連線';
+  const cancel=document.createElement('button');cancel.className='ep-btn cancel';cancel.textContent='取消';
+  save.addEventListener('click',()=>{
+    const up=parseInt(popup.querySelector('#neup').value)||0;
+    const dn=parseInt(popup.querySelector('#nedn').value)||0;
+    cfg.edges.push({a:fromId,b:toId,up,dn});
+    closeAllPopups();redraw();
+  });
+  cancel.addEventListener('click',()=>{closeAllPopups();redraw();});
+  btns.appendChild(save);btns.appendChild(cancel);
+  popup.appendChild(btns);
+  document.body.appendChild(popup);
+  clampPopup(popup,px,py);
+}
+
+/* clamp popup to viewport */
+function clampPopup(el,px,py){
+  requestAnimationFrame(()=>{
+    const r=el.getBoundingClientRect();
+    let l=px,t=py;
+    if(l+r.width>window.innerWidth-8)l=window.innerWidth-r.width-8;
+    if(t+r.height>window.innerHeight-8)t=window.innerHeight-r.height-8;
+    if(l<4)l=4;if(t<4)t=4;
+    el.style.left=l+'px';el.style.top=t+'px';
+  });
+}
+
+/* ══════════ TIMELINE ══════════ */
+function renderTimeline(times){
+  const tl=document.getElementById('TL');tl.innerHTML='';
+  const entries=cfg.nodes.filter(n=>times[n.id]!==undefined).sort((a,b)=>times[a.id]-times[b.id]||a.id.localeCompare(b.id));
+  let prevT=null;
+  entries.forEach((nd,i)=>{
+    const t=times[nd.id],isLast=i===entries.length-1;
+    const item=document.createElement('div');item.className='tl-item';
+    const left=document.createElement('div');left.className='tl-left';
+    const dot=document.createElement('div');dot.className='tl-dot '+(nd.type||'node');
+    left.appendChild(dot);
+    if(!isLast){const ln=document.createElement('div');ln.className='tl-line';left.appendChild(ln);}
+    const right=document.createElement('div');right.className='tl-right';
+    const tEl=document.createElement('div');tEl.className='tl-time';tEl.textContent=fmt(t);right.appendChild(tEl);
+    const nEl=document.createElement('div');nEl.className='tl-name';nEl.textContent=nd.name.replace(/\n/g,'');right.appendChild(nEl);
+    if(nd.rest&&nd.rest>0){const rEl=document.createElement('div');rEl.className='tl-rest';rEl.textContent=`☕ 休息 ${nd.rest} 分`;right.appendChild(rEl);}
+    if(prevT!==null&&t>prevT){const dEl=document.createElement('div');dEl.className='tl-dur';dEl.textContent=`(+${t-prevT}分)`;right.appendChild(dEl);}
+    prevT=t;item.appendChild(left);item.appendChild(right);tl.appendChild(item);
+  });
+}
+function copyTimeline(){
+  const lines=[];
+  document.querySelectorAll('.tl-item').forEach(item=>{
+    const t=item.querySelector('.tl-time')?.textContent||'';
+    const n=item.querySelector('.tl-name')?.textContent||'';
+    const r=item.querySelector('.tl-rest')?.textContent||'';
+    // parse rest minutes from "☕ 休息 X 分"
+    const restMatch=r.match(/(\d+)/);
+    const restSuffix=restMatch?` (休${restMatch[1]}分)`:'';
+    lines.push(t+'  '+n+restSuffix);
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+    const btn=document.getElementById('CBTN');
+    btn.textContent='✓ 已複製！';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='📋 複製文字';btn.classList.remove('copied');},2000);
+  });
+}
+
+/* ══════════ CONFIG EDITOR ══════════ */
+function syncEditor(){
+  const el=document.getElementById('cfgEditor');
+  if(document.activeElement===el)return;
+  el.value=JSON.stringify(cfg,null,2);
+  el.classList.remove('err');setStatus('');
+}
+function applyConfig(){
+  const el=document.getElementById('cfgEditor');
+  try{
+    const parsed=JSON.parse(el.value);
+    if(!Array.isArray(parsed.nodes))throw new Error('nodes 必須為陣列');
+    if(!Array.isArray(parsed.edges))throw new Error('edges 必須為陣列');
+    if(!parsed.startNode)throw new Error('缺少 startNode');
+    const ids=new Set(parsed.nodes.map(n=>n.id));
+    if(!ids.has(parsed.startNode))throw new Error(`startNode "${parsed.startNode}" 不存在`);
+    for(const e of parsed.edges){
+      if(!ids.has(e.a))throw new Error(`edge.a "${e.a}" 找不到`);
+      if(!ids.has(e.b))throw new Error(`edge.b "${e.b}" 找不到`);
+    }
+    cfg=parsed;el.classList.remove('err');setStatus('✓ 套用成功','ok');redraw(false);
+  }catch(err){el.classList.add('err');setStatus('✗ '+err.message,'err');}
+}
+function exportConfig(){
+  document.getElementById('cfgEditor').value=JSON.stringify(cfg,null,2);
+  document.getElementById('cfgEditor').classList.remove('err');
+  setStatus('✓ 已匯出','ok');
+}
+function resetConfig(){
+  cfg=JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  document.getElementById('cfgEditor').value=JSON.stringify(cfg,null,2);
+  document.getElementById('cfgEditor').classList.remove('err');
+  setStatus('↺ 已還原','ok');redraw(false);
+}
+function setStatus(msg,type=''){
+  const el=document.getElementById('cfgStatus');
+  el.textContent=msg;el.className='cfg-status'+(type?' '+type:'');
+  if(type==='ok')setTimeout(()=>{if(el.textContent===msg)el.textContent='';},3000);
+}
+
+/* ══════════ LAYOUT ══════════ */
+function fitLayout(){
+  const top=document.getElementById('topSection');
+  if(top)document.documentElement.style.setProperty('--top-h',top.offsetHeight+'px');
+}
+function setDir(d){
+  direction=d;
+  document.getElementById('BU').classList.toggle('on',d==='up');
+  document.getElementById('BD').classList.toggle('on',d==='down');
+  redraw();
+}
+
+/* ══════════ TEMPLATES ══════════ */
+function toggleTplMenu(){
+  const menu=document.getElementById('tplMenu');
+  if(menu.style.display==='none'){
+    menu.style.display='block';
+    buildTplMenu(menu);
+    // close on outside click
+    setTimeout(()=>document.addEventListener('click',closeTplMenu,{once:true}),10);
+  } else {
+    menu.style.display='none';
+  }
+}
+function closeTplMenu(){document.getElementById('tplMenu').style.display='none';}
+
+function buildTplMenu(menu){
+  menu.innerHTML='';
+  for(const tpl of TEMPLATES){
+    const item=document.createElement('div');item.className='tpl-item';
+    item.innerHTML=`<span class="ti">📄</span>${tpl.label}`;
+    item.addEventListener('click',()=>loadTemplate(tpl));
+    menu.appendChild(item);
+  }
+}
+
+async function loadTemplate(tpl){
+  document.getElementById('tplMenu').style.display='none';
+  const statusEl=document.getElementById('cfgStatus');
+  statusEl.textContent='載入中…';statusEl.className='cfg-status';
+  try{
+    const res=await fetch(tpl.file);
+    if(!res.ok)throw new Error(`無法載入 ${tpl.file}（${res.status}）`);
+    const data=await res.json();
+    // validate basics
+    if(!Array.isArray(data.nodes)||!Array.isArray(data.edges)||!data.startNode)
+      throw new Error('JSON 格式不正確');
+    cfg=data;
+    document.getElementById('cfgEditor').value=JSON.stringify(cfg,null,2);
+    document.getElementById('cfgEditor').classList.remove('err');
+    setStatus(`✓ 已載入「${tpl.label}」`,'ok');
+    redraw(false);
+  }catch(e){
+    setStatus('✗ '+e.message,'err');
+  }
+}
+
+/* ══════════ INIT ══════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('T').addEventListener('input',()=>redraw());
+  document.getElementById('M').addEventListener('input',()=>{
+    mult=parseFloat(document.getElementById('M').value);
+    document.getElementById('MV').textContent=mult.toFixed(1)+'×';
+    redraw();
+  });
+  const cfgEl=document.getElementById('cfgEditor');
+  cfgEl.addEventListener('input',()=>{
+    try{JSON.parse(cfgEl.value);cfgEl.classList.remove('err');setStatus('');}
+    catch{cfgEl.classList.add('err');setStatus('JSON 格式錯誤…','err');}
+  });
+  cfgEl.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();applyConfig();}
+  });
+  cfgEl.value=JSON.stringify(cfg,null,2);
+  fitLayout();setTimeout(redraw,80);
+});
+window.addEventListener('resize',()=>{fitLayout();redraw(false);});
+</script>
+</body>
+</html>
