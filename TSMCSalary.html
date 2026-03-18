@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台積薪水計算機</title>
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d2e;--surface2:#252840;--border:#333655;
+  --text:#e8eaf0;--muted:#8a8eb0;--accent:#6c8fff;--accent2:#a78bfa;
+  --green:#4ade80;--yellow:#facc15;--orange:#fb923c;--red:#f87171;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:"Segoe UI",system-ui,sans-serif;color:var(--text);min-height:100vh;}
+h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:1.5rem;}
+
+/* Inputs */
+.inputs-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:900px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;}
+.field{display:flex;flex-direction:column;gap:.4rem;}
+.field label{font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.field input{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:.55rem .75rem;color:var(--text);font-size:.95rem;outline:none;transition:.2s;}
+.field input:focus{border-color:var(--accent);}
+.field .hint{font-size:.7rem;color:var(--muted);}
+.calc-btn{display:block;margin:0 auto 2rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:.75rem 3rem;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s;}
+.calc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,143,255,.35);}
+
+/* Summary */
+.summary-grid{max-width:900px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
+.stat-card .label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3rem;}
+.stat-card .value{font-size:1.1rem;font-weight:700;color:var(--accent);}
+.stat-card .value.big{font-size:1.3rem;color:var(--green);}
+
+/* Year sections */
+.years{max-width:900px;margin:0 auto 3rem;}
+.year-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:1rem;overflow:hidden;}
+.year-header{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.2rem;cursor:pointer;user-select:none;transition:.15s;}
+.year-header:hover{background:var(--surface2);}
+.year-header .year-label{font-weight:700;font-size:1rem;}
+.year-header .year-total{font-size:1rem;font-weight:700;color:var(--green);}
+.year-header .year-salary{font-size:.8rem;color:var(--muted);}
+.year-header .chevron{color:var(--muted);transition:.2s;font-size:.8rem;}
+.year-header.open .chevron{transform:rotate(90deg);}
+.year-body{display:none;border-top:1px solid var(--border);}
+.year-body.open{display:block;}
+.month-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.month-table th{background:var(--surface2);padding:.5rem .75rem;text-align:left;color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;}
+.month-table td{padding:.45rem .75rem;border-top:1px solid #1e2035;vertical-align:top;}
+.month-table tr:hover td{background:#1e2035;}
+.month-name{font-weight:600;white-space:nowrap;}
+.month-total{font-weight:700;text-align:right;color:var(--text);}
+.items-list{display:flex;flex-wrap:wrap;gap:.3rem;}
+.item-chip{background:var(--surface2);border-radius:4px;padding:.15rem .45rem;font-size:.73rem;white-space:nowrap;}
+.item-chip.salary{border-left:3px solid var(--accent);}
+.item-chip.stock{border-left:3px solid var(--accent2);}
+.item-chip.quarterly{border-left:3px solid var(--yellow);}
+.item-chip.july{border-left:3px solid var(--orange);}
+.item-chip.annual{border-left:3px solid var(--green);}
+.item-chip.sports{border-left:3px solid var(--red);}
+.year-footer{background:var(--surface2);padding:.6rem 1.2rem;display:flex;justify-content:flex-end;gap:2rem;font-size:.82rem;}
+.year-footer span{color:var(--muted);}
+.year-footer strong{color:var(--text);}
+
+/* 10-year table */
+.ten-year{max-width:900px;margin:0 auto 3rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.ten-year h2{padding:1rem 1.2rem;font-size:1rem;border-bottom:1px solid var(--border);}
+.ten-year table{width:100%;border-collapse:collapse;font-size:.83rem;}
+.ten-year th{background:var(--surface2);padding:.6rem .75rem;text-align:right;color:var(--muted);font-size:.75rem;text-transform:uppercase;}
+.ten-year th:first-child{text-align:left;}
+.ten-year td{padding:.55rem .75rem;border-top:1px solid #1e2035;text-align:right;}
+.ten-year td:first-child{text-align:left;font-weight:600;}
+.ten-year tr:hover td{background:#1e2035;}
+.ten-year .cumulative{color:var(--green);font-weight:700;}
+
+#results{display:none;}
+</style>
+</head>
+<body>
+
+<h1>📊 台積薪水計算機</h1>
+<p class="subtitle">TSMC Salary Calculator — 10 年收入試算</p>
+
+<div class="inputs-panel">
+  <div class="field">
+    <label>入職月份</label>
+    <input type="number" id="startMonth" value="1" min="1" max="12">
+    <span class="hint">1 = 1月，12 = 12月</span>
+  </div>
+  <div class="field">
+    <label>月薪（元）</label>
+    <input type="number" id="baseSalary" value="63700" step="100">
+  </div>
+  <div class="field">
+    <label>季分紅月數</label>
+    <input type="number" id="quarterlyMonths" value="4.3" step="0.1">
+    <span class="hint">每季分紅 = 月薪 × 此數</span>
+  </div>
+  <div class="field">
+    <label>年調薪（%）</label>
+    <input type="number" id="raiseRate" value="5" step="0.1">
+  </div>
+  <div class="field">
+    <label>運動會獎金（元）</label>
+    <input type="number" id="sportsBonus" value="25000" step="1000">
+    <span class="hint">每年10月發放</span>
+  </div>
+  <div class="field">
+    <label>分紅年複合成長率（%）</label>
+    <input type="number" id="bonusGrowthRate" value="0" step="0.5">
+    <span class="hint">每年季分紅額外成長</span>
+  </div>
+</div>
+
+<button class="calc-btn" onclick="calculate()">計算薪資</button>
+
+<div id="results">
+  <div class="summary-grid" id="summaryGrid"></div>
+  <div class="ten-year" id="tenYearTable"></div>
+  <div class="years" id="yearsContainer"></div>
+</div>
+
+<script>
+const MONTH_NAMES = ['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+// Quarter payment definitions: payMonth -> {covered months, yearOffset relative to payment year}
+const QUARTERS = {
+  2:  { months: [10, 11, 12], yearOffset: -1, label: 'Q4前年(10-12月)' },
+  5:  { months: [1, 2, 3],    yearOffset: 0,  label: 'Q1(1-3月)' },
+  8:  { months: [4, 5, 6],    yearOffset: 0,  label: 'Q2(4-6月)' },
+  11: { months: [7, 8, 9],    yearOffset: 0,  label: 'Q3(7-9月)' }
+};
+
+function fmt(n) {
+  return '$ ' + Math.round(n).toLocaleString('zh-TW');
+}
+
+function calculate() {
+  const startMonth     = Math.min(12, Math.max(1, parseInt(document.getElementById('startMonth').value) || 1));
+  const baseSalary     = parseFloat(document.getElementById('baseSalary').value) || 63700;
+  const quarterlyMonths = parseFloat(document.getElementById('quarterlyMonths').value) || 4.3;
+  const raiseRate      = (parseFloat(document.getElementById('raiseRate').value) || 5) / 100;
+  const sportsBonus       = parseFloat(document.getElementById('sportsBonus').value) || 25000;
+  const bonusGrowthRate   = (parseFloat(document.getElementById('bonusGrowthRate').value) || 0) / 100;
+
+  // qualifyAbsMonth: absolute month index (1 = Jan year1) when bonus accumulation starts
+  // After 3 full months of employment
+  const qualifyAbsMonth = startMonth + 3;
+
+  // Pre-calculate all quarterly bonus amounts paid in each (year, payMonth) for years 1-10
+  const qPaid = {}; // key: `${year}-${month}`
+  for (let year = 1; year <= 10; year++) {
+    const salary = baseSalary * Math.pow(1 + raiseRate, year - 1);
+    for (const [pm, info] of Object.entries(QUARTERS)) {
+      const payMonth = parseInt(pm);
+      const payAbsMonth = (year - 1) * 12 + payMonth;
+      const covYear = year + info.yearOffset;
+
+      // If payment month is before employment, skip
+      if (payAbsMonth < startMonth) { qPaid[`${year}-${payMonth}`] = 0; continue; }
+
+      let eligible = 0;
+      for (const m of info.months) {
+        const covAbs = (covYear - 1) * 12 + m;
+        if (covAbs >= qualifyAbsMonth) eligible++;
+      }
+      // Feb bonus covers prev year Q4 → use prev year salary; others use current year salary
+      const bonusSalary = (payMonth === 2 && year > 1)
+        ? baseSalary * Math.pow(1 + raiseRate, year - 2)
+        : salary;
+      const bonusGrowth = Math.pow(1 + bonusGrowthRate, year - 1);
+      qPaid[`${year}-${payMonth}`] = bonusSalary * quarterlyMonths * (eligible / 3) * bonusGrowth;
+    }
+  }
+
+  // Build monthly breakdown for 10 years
+  const results = [];
+  let cumulativeTotal = 0;
+
+  for (let year = 1; year <= 10; year++) {
+    const salary = baseSalary * Math.pow(1 + raiseRate, year - 1);
+    let yearTotal = 0;
+    const months = [];
+
+    for (let month = 1; month <= 12; month++) {
+      const absMonth = (year - 1) * 12 + month;
+      if (absMonth < startMonth) continue;
+
+      let income = 0;
+      const items = [];
+
+      // 1. Monthly salary
+      income += salary;
+      items.push({ label: '月薪', amount: salary, cls: 'salary' });
+
+      // 2. Stock subsidy 3%
+      const stock = salary * 0.03;
+      income += stock;
+      items.push({ label: '購股補貼 3%', amount: stock, cls: 'stock' });
+
+      // 3. Quarterly bonus (Feb, May, Aug, Nov)
+      if (QUARTERS[month]) {
+        const bonus = qPaid[`${year}-${month}`] || 0;
+        if (bonus > 0) {
+          income += bonus;
+          const info = QUARTERS[month];
+          const covYear = year + info.yearOffset;
+          let eligible = 0;
+          for (const m of info.months) {
+            if ((covYear - 1) * 12 + m >= qualifyAbsMonth) eligible++;
+          }
+          const label = eligible < 3
+            ? `季分紅 ${QUARTERS[month].label} (${eligible}/3)`
+            : `季分紅 ${QUARTERS[month].label}`;
+          items.push({ label, amount: bonus, cls: 'quarterly' });
+        }
+      }
+
+      // 4. July bonus: sum of all 4 quarterly bonuses from previous year (Feb+May+Aug+Nov)
+      if (month === 7 && year >= 2) {
+        const prevFeb = qPaid[`${year-1}-2`]  || 0;
+        const prevMay = qPaid[`${year-1}-5`]  || 0;
+        const prevAug = qPaid[`${year-1}-8`]  || 0;
+        const prevNov = qPaid[`${year-1}-11`] || 0;
+        const julyBonus = prevFeb + prevMay + prevAug + prevNov;
+        if (julyBonus > 0) {
+          income += julyBonus;
+          items.push({ label: '7月年度分紅(前年2+5+8+11月)', amount: julyBonus, cls: 'july' });
+        }
+      }
+
+      // 5. Year-end bonus (January, covers previous year)
+      if (month === 1 && year >= 2) {
+        const prevSalary    = baseSalary * Math.pow(1 + raiseRate, year - 2);
+        const prevYearStart = (year - 2) * 12 + 1;
+        const prevYearEnd   = (year - 1) * 12;
+        const firstEligible = Math.max(startMonth, prevYearStart);
+        const eligibleMths  = Math.max(0, prevYearEnd - firstEligible + 1);
+        if (eligibleMths > 0) {
+          const annualBonus = prevSalary * 2 * (eligibleMths / 12);
+          income += annualBonus;
+          items.push({ label: `年終獎金(${eligibleMths}/12 個月)`, amount: annualBonus, cls: 'annual' });
+        }
+      }
+
+      // 6. Sports bonus (October) — year 1 only if joined before July
+      const eligibleSports = year > 1 || startMonth <= 6;
+      if (month === 10 && eligibleSports) {
+        income += sportsBonus;
+        items.push({ label: '運動會獎金', amount: sportsBonus, cls: 'sports' });
+      }
+
+      yearTotal += income;
+      months.push({ month, income, items });
+    }
+
+    cumulativeTotal += yearTotal;
+    results.push({ year, salary, yearTotal, cumulativeTotal, months });
+  }
+
+  renderResults(results, baseSalary, startMonth);
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderResults(results, baseSalary, startMonth) {
+  const yr10 = results[9];
+  const yr1  = results[0];
+
+  // Summary cards
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="label">起薪</div>
+      <div class="value">${fmt(baseSalary)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">第1年收入</div>
+      <div class="value">${fmt(yr1.yearTotal)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">第10年月薪</div>
+      <div class="value">${fmt(yr10.salary)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">第10年收入</div>
+      <div class="value">${fmt(yr10.yearTotal)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">10年總收入</div>
+      <div class="value big">${fmt(yr10.cumulativeTotal)}</div>
+    </div>
+  `;
+
+  // 10-year summary table
+  let tableRows = results.map(r => `
+    <tr>
+      <td>第 ${r.year} 年</td>
+      <td>${fmt(r.salary)}</td>
+      <td>${fmt(r.yearTotal)}</td>
+      <td class="cumulative">${fmt(r.cumulativeTotal)}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('tenYearTable').innerHTML = `
+    <h2>📈 十年收入總覽</h2>
+    <table>
+      <thead><tr>
+        <th>年份</th><th>月薪</th><th>年度收入</th><th>累計總收入</th>
+      </tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  `;
+
+  // Year-by-year detail
+  let yearsHTML = results.map((r, idx) => {
+    const monthRows = r.months.map(m => {
+      const chips = m.items.map(it =>
+        `<span class="item-chip ${it.cls}">${it.label}：${fmt(it.amount)}</span>`
+      ).join('');
+      return `
+        <tr>
+          <td class="month-name">${MONTH_NAMES[m.month]}</td>
+          <td><div class="items-list">${chips}</div></td>
+          <td class="month-total">${fmt(m.income)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const isFirst = idx === 0;
+    return `
+      <div class="year-block">
+        <div class="year-header ${isFirst ? 'open' : ''}" onclick="toggleYear(this)">
+          <span class="year-label">第 ${r.year} 年</span>
+          <span class="year-salary">月薪 ${fmt(r.salary)}</span>
+          <span class="year-total">${fmt(r.yearTotal)}</span>
+          <span class="chevron">▶</span>
+        </div>
+        <div class="year-body ${isFirst ? 'open' : ''}">
+          <table class="month-table">
+            <thead><tr>
+              <th style="width:70px">月份</th>
+              <th>收入明細</th>
+              <th style="width:120px;text-align:right">小計</th>
+            </tr></thead>
+            <tbody>${monthRows}</tbody>
+          </table>
+          <div class="year-footer">
+            <span>年度合計：<strong>${fmt(r.yearTotal)}</strong></span>
+            <span>累計：<strong style="color:var(--green)">${fmt(r.cumulativeTotal)}</strong></span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('yearsContainer').innerHTML = yearsHTML;
+}
+
+function toggleYear(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// Auto-calculate on load
+window.addEventListener('load', calculate);
+</script>
+</body>
+</html>
