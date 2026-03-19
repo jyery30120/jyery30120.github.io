@@ -16,7 +16,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:1.5rem;}
 
 /* Inputs */
-.inputs-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:900px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;}
+.inputs-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;max-width:1300px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;}
 .field{display:flex;flex-direction:column;gap:.4rem;}
 .field label{font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
 .field input{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:.55rem .75rem;color:var(--text);font-size:.95rem;outline:none;transition:.2s;}
@@ -26,14 +26,14 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .calc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,143,255,.35);}
 
 /* Summary */
-.summary-grid{max-width:900px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;}
+.summary-grid{max-width:1300px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
 .stat-card .label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3rem;}
 .stat-card .value{font-size:1.1rem;font-weight:700;color:var(--accent);}
 .stat-card .value.big{font-size:1.3rem;color:var(--green);}
 
 /* Year sections */
-.years{max-width:900px;margin:0 auto 3rem;}
+.years{max-width:1300px;margin:0 auto 3rem;}
 .year-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:1rem;overflow:hidden;}
 .year-header{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.2rem;cursor:pointer;user-select:none;transition:.15s;}
 .year-header:hover{background:var(--surface2);}
@@ -58,12 +58,13 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .item-chip.july{border-left:3px solid var(--orange);}
 .item-chip.annual{border-left:3px solid var(--green);}
 .item-chip.sports{border-left:3px solid var(--red);}
+.item-chip.invest{border-left:3px solid #22d3ee;}
 .year-footer{background:var(--surface2);padding:.6rem 1.2rem;display:flex;justify-content:flex-end;gap:2rem;font-size:.82rem;}
 .year-footer span{color:var(--muted);}
 .year-footer strong{color:var(--text);}
 
 /* 10-year table */
-.ten-year{max-width:900px;margin:0 auto 3rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.ten-year{max-width:1300px;margin:0 auto 3rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .ten-year h2{padding:1rem 1.2rem;font-size:1rem;border-bottom:1px solid var(--border);}
 .ten-year table{width:100%;border-collapse:collapse;font-size:.83rem;}
 .ten-year th{background:var(--surface2);padding:.6rem .75rem;text-align:right;color:var(--muted);font-size:.75rem;text-transform:uppercase;}
@@ -110,6 +111,11 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
     <input type="number" id="bonusGrowthRate" value="0" step="0.5">
     <span class="hint">每年季分紅額外成長</span>
   </div>
+  <div class="field">
+    <label>投資年化報酬率（%）</label>
+    <input type="number" id="investRate" value="0" step="0.5">
+    <span class="hint">每月將當月收入全額投入</span>
+  </div>
 </div>
 
 <button class="calc-btn" onclick="calculate()">計算薪資</button>
@@ -142,6 +148,8 @@ function calculate() {
   const raiseRate      = (parseFloat(document.getElementById('raiseRate').value) || 5) / 100;
   const sportsBonus       = parseFloat(document.getElementById('sportsBonus').value) || 25000;
   const bonusGrowthRate   = (parseFloat(document.getElementById('bonusGrowthRate').value) || 0) / 100;
+  const investRate        = (parseFloat(document.getElementById('investRate').value) || 0) / 100;
+  const monthlyInvestRate = Math.pow(1 + investRate, 1 / 12) - 1;
 
   // qualifyAbsMonth: absolute month index (1 = Jan year1) when bonus accumulation starts
   // After 3 full months of employment
@@ -176,6 +184,7 @@ function calculate() {
   // Build monthly breakdown for 10 years
   const results = [];
   let cumulativeTotal = 0;
+  let portfolio = 0; // tracks cumulative invested amount across all years
 
   for (let year = 1; year <= 10; year++) {
     const salary = baseSalary * Math.pow(1 + raiseRate, year - 1);
@@ -216,16 +225,16 @@ function calculate() {
         }
       }
 
-      // 4. July bonus: sum of all 4 quarterly bonuses from previous year (Feb+May+Aug+Nov)
+      // 4. July bonus: current year Feb + previous year May+Aug+Nov
       if (month === 7 && year >= 2) {
-        const prevFeb = qPaid[`${year-1}-2`]  || 0;
+        const curFeb  = qPaid[`${year}-2`]    || 0;
         const prevMay = qPaid[`${year-1}-5`]  || 0;
         const prevAug = qPaid[`${year-1}-8`]  || 0;
         const prevNov = qPaid[`${year-1}-11`] || 0;
-        const julyBonus = prevFeb + prevMay + prevAug + prevNov;
+        const julyBonus = curFeb + prevMay + prevAug + prevNov;
         if (julyBonus > 0) {
           income += julyBonus;
-          items.push({ label: '7月年度分紅(前年2+5+8+11月)', amount: julyBonus, cls: 'july' });
+          items.push({ label: '7月年度分紅(當年2月+前年5+8+11月)', amount: julyBonus, cls: 'july' });
         }
       }
 
@@ -250,12 +259,21 @@ function calculate() {
         items.push({ label: '運動會獎金', amount: sportsBonus, cls: 'sports' });
       }
 
+      // 7. Investment return on existing portfolio
+      const investIncome = portfolio * monthlyInvestRate;
+      if (investIncome > 0) {
+        income += investIncome;
+        items.push({ label: `投資報酬 (${fmt(portfolio)} × ${(monthlyInvestRate * 100).toFixed(3)}%)`, amount: investIncome, cls: 'invest' });
+      }
+      // Add this month's total income into portfolio
+      portfolio += income;
+
       yearTotal += income;
-      months.push({ month, income, items });
+      months.push({ month, income, items, portfolio });
     }
 
     cumulativeTotal += yearTotal;
-    results.push({ year, salary, yearTotal, cumulativeTotal, months });
+    results.push({ year, salary, yearTotal, cumulativeTotal, months, portfolio });
   }
 
   renderResults(results, baseSalary, startMonth);
@@ -288,6 +306,10 @@ function renderResults(results, baseSalary, startMonth) {
     <div class="stat-card">
       <div class="label">10年總收入</div>
       <div class="value big">${fmt(yr10.cumulativeTotal)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">10年後投資資產</div>
+      <div class="value big" style="color:#22d3ee">${fmt(yr10.portfolio)}</div>
     </div>
   `;
 
