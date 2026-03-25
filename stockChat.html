@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PTT Stock 文字雲</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f1a; --card-bg: #1a1a2e; --border: #2d2d4a;
+      --text: #e2e8f0; --muted: #94a3b8;
+      --primary: #6366f1; --primary-h: #4f46e5;
+      --success: #10b981; --error: #ef4444; --warn: #f59e0b;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Microsoft JhengHei','PingFang TC',sans-serif; min-height:100vh; padding:16px; }
+    h1 { font-size:1.8em; text-align:center; padding:20px 0 6px; background:linear-gradient(135deg,#6366f1,#a855f7); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .subtitle { text-align:center; color:var(--muted); font-size:.9em; margin-bottom:20px; }
+    .card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:14px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px; }
+    .row:last-child { margin-bottom:0; }
+    .field { display:flex; flex-direction:column; gap:6px; flex:1; min-width:160px; }
+    .field label { font-size:.78em; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+    .input-row { display:flex; gap:6px; }
+    input[type=text], input[type=time] {
+      background:#0a0a14; border:1px solid var(--border); border-radius:8px;
+      padding:9px 12px; color:var(--text); font-size:.95em; width:100%;
+      transition:border-color .2s;
+    }
+    input[type=text]:focus, input[type=time]:focus { outline:none; border-color:var(--primary); }
+    .time-sep { color:var(--muted); padding:0 2px; align-self:center; flex-shrink:0; }
+    .quick-times { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip { display:flex; align-items:center; gap:5px; padding:7px 13px; border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:.88em; transition:all .15s; }
+    .chip.push:has(input:checked) { border-color:#10b981; background:rgba(16,185,129,.12); color:#6ee7b7; }
+    .chip.boo:has(input:checked) { border-color:#ef4444; background:rgba(239,68,68,.12); color:#fca5a5; }
+    .chip.neutral:has(input:checked) { border-color:#6366f1; background:rgba(99,102,241,.12); color:#a5b4fc; }
+    .chip input[type=checkbox] { accent-color:var(--primary); width:14px; height:14px; }
+    .btn { padding:9px 18px; border-radius:8px; border:none; cursor:pointer; font-size:.9em; font-weight:600; transition:all .2s; white-space:nowrap; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .btn-sm { padding:7px 12px; font-size:.82em; }
+    .btn-sec { background:var(--border); color:var(--text); }
+    .btn-sec:hover:not(:disabled) { background:#3d3d5a; }
+    .btn-pri { background:var(--primary); color:#fff; padding:11px 36px; font-size:1em; }
+    .btn-pri:hover:not(:disabled) { background:var(--primary-h); transform:translateY(-1px); }
+    .center { display:flex; justify-content:center; padding-top:6px; }
+    .status { display:none; align-items:center; gap:8px; padding:11px 15px; border-radius:8px; font-size:.88em; margin-bottom:14px; }
+    .status.show { display:flex; }
+    .status.info  { background:rgba(99,102,241,.1);  border:1px solid rgba(99,102,241,.3);  color:#a5b4fc; }
+    .status.ok    { background:rgba(16,185,129,.1);  border:1px solid rgba(16,185,129,.3);  color:#6ee7b7; }
+    .status.err   { background:rgba(239,68,68,.1);   border:1px solid rgba(239,68,68,.3);   color:#fca5a5; }
+    .spinner { width:15px; height:15px; border:2px solid rgba(99,102,241,.3); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #articleInfo h2 { font-size:1.05em; margin-bottom:8px; }
+    .meta-row { display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:.82em; }
+    .meta-row a { color:var(--primary); text-decoration:none; }
+    #wordcloudWrap h3 { font-size:.82em; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:10px; }
+    #wordcloudWrap h3 em { font-style:normal; text-transform:none; font-weight:normal; }
+    #wordcloud { display:block; width:100%; border-radius:8px; cursor:pointer; }
+    .comm-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .comm-header h3 { font-size:.95em; }
+    .comm-header span { color:var(--muted); font-size:.82em; }
+    .comm-scroll { max-height:420px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+    .kwbar { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px; font-size:.82em; color:var(--muted); min-height:22px; flex-wrap:wrap; }
+    .kwbar .kwtag { background:rgba(234,179,8,.18); color:#fbbf24; padding:2px 10px; border-radius:10px; }
+    .kwbar .clr { background:none; border:none; color:var(--muted); cursor:pointer; }
+    .kwbar .nav-btn { background:rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.3); color:#a5b4fc; border-radius:6px; padding:2px 10px; cursor:pointer; font-size:.9em; }
+    .kwbar .nav-btn:hover { background:rgba(99,102,241,.3); }
+    .kwbar .nav-pos { color:var(--muted); font-size:.82em; }
+    .comment { display:flex; align-items:flex-start; gap:7px; padding:7px 10px; border-radius:6px; margin-bottom:5px; font-size:.88em; border-left:3px solid transparent; }
+    .comment.push  { border-left-color:#10b981; background:rgba(16,185,129,.04); }
+    .comment.boo   { border-left-color:#ef4444; background:rgba(239,68,68,.04); }
+    .comment.neut  { border-left-color:#475569; }
+    .ct { font-weight:700; width:18px; flex-shrink:0; }
+    .comment.push .ct  { color:#10b981; }
+    .comment.boo  .ct  { color:#ef4444; }
+    .comment.neut .ct  { color:#64748b; }
+    .cu { color:#7c3aed; font-weight:600; min-width:70px; flex-shrink:0; font-size:.82em; }
+    .cc { flex:1; word-break:break-all; }
+    .cc mark { background:rgba(234,179,8,.25); color:#fbbf24; border-radius:2px; padding:0 2px; }
+    .comment.kw-current { outline:1px solid rgba(234,179,8,.5); background:rgba(234,179,8,.06) !important; }
+    .comment.kw-current .cc mark { background:rgba(234,179,8,.55); }
+    .ctime { color:var(--muted); font-size:.78em; white-space:nowrap; flex-shrink:0; }
+    @media(max-width:560px){ body{padding:10px;} h1{font-size:1.4em;} .cu{min-width:50px;} }
+  </style>
+</head>
+<body>
+  <h1>PTT Stock 文字雲</h1>
+  <p class="subtitle">分析 PTT Stock 版文章留言關鍵字</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field" style="flex:3">
+        <label>文章網址</label>
+        <div class="input-row">
+          <input type="text" id="articleUrl" placeholder="載入中…">
+          <button class="btn btn-sec btn-sm" id="autoFetchBtn">取得最新</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>留言時間篩選</label>
+        <div class="input-row">
+          <input type="time" id="startTime" title="開始時間">
+          <span class="time-sep">—</span>
+          <input type="time" id="endTime" title="結束時間">
+        </div>
+        <div class="quick-times">
+          <button class="btn btn-sec btn-sm" data-min="5">近5分</button>
+          <button class="btn btn-sec btn-sm" data-min="10">近10分</button>
+          <button class="btn btn-sec btn-sm" data-min="30">近30分</button>
+          <button class="btn btn-sec btn-sm" data-min="60">近60分</button>
+          <button class="btn btn-sec btn-sm" data-min="120">近120分</button>
+          <button class="btn btn-sec btn-sm" data-min="0">清除</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>留言類型</label>
+        <div class="chips">
+          <label class="chip push"><input type="checkbox" class="pcheck" value="推" checked> 推</label>
+          <label class="chip boo"><input type="checkbox" class="pcheck" value="噓" checked> 噓</label>
+          <label class="chip neutral"><input type="checkbox" class="pcheck" value="→" checked> →</label>
+        </div>
+      </div>
+    </div>
+    <div class="center">
+      <button class="btn btn-pri" id="analyzeBtn">生成文字雲</button>
+    </div>
+  </div>
+
+  <div class="status" id="status"><div class="spinner" id="spin"></div><span id="statusTxt"></span></div>
+
+  <div class="card" id="articleInfo" style="display:none">
+    <h2 id="artTitle"></h2>
+    <div class="meta-row">
+      <span id="artMeta"></span>
+      <a id="artLink" href="#" target="_blank" rel="noopener">在 PTT 開啟 ↗</a>
+    </div>
+  </div>
+
+  <div class="card" id="wordcloudWrap" style="display:none">
+    <h3>文字雲 <em>（點擊關鍵字可在留言中高亮）</em></h3>
+    <canvas id="wordcloud"></canvas>
+  </div>
+
+  <div class="card" id="commWrap" style="display:none">
+    <div class="comm-header">
+      <h3>留言列表 <span id="commCount"></span></h3>
+      <button class="btn btn-sec btn-sm" id="toggleComm">收合</button>
+    </div>
+    <div class="kwbar" id="kwbar"></div>
+    <div class="comm-scroll" id="commScroll">
+      <div id="commList"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const PTT_BASE = 'https://www.ptt.cc';
+    const STOCK_INDEX = `${PTT_BASE}/bbs/Stock/index.html`;
+
+    const PROXIES = [
+      u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+      u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+      u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    ];
+
+    const STOP = new Set([
+      '請問','如果','不是','可以','一個','沒有','這個','什麼','因為','所以',
+      '但是','就是','還是','而且','一下','的話','感覺','然後','現在','已經',
+      '應該','之後','以上','以下','有人','大家','自己','覺得','不會','真的',
+      '只是','其實','不知','知道','這樣','這裡','那裡','那個','這種','一樣',
+      '最近','還有','也是','一直','我們','他們','謝謝','問題','可能','方面',
+      '時間','一些','不要','很多','都是','都在','有些','本來','原本','重點',
+      '影響','不用','有沒','沒辦','怎麼','為什','哪裡','哪個','哪些','如何',
+      '是否','需要','想要','希望','認為','版友','看板','文章','發文','回文',
+      '噓文','推文','帳號','作者','標題','時間','留言','整個','沒錯','對吧',
+      '的時','的人','的事','的是','的在','算了','就好','就不','不對','沒想',
+      '先說','然而','最後','其他','其中','反而','雖然','即使','即便','不過',
+      '而是','因此','於是','不僅','不只','不到','不了','不太','不怎','不必',
+      '不需','不管','不論','無論','除非','除了','如此','這麼','那麼','怎樣',
+      '這次','那次','每次','每個','每天','每年','每月','每週','今天','昨天',
+      '明天','今年','去年','明年','今晚','晚上','早上','下午','上午',
+    ]);
+
+    const STOCK_TERMS = [
+      '台積電','聯發科','鴻海','台達電','台塑','中華電','富邦金','國泰金',
+      '中信金','玉山金','兆豐金','合庫金','開發金','第一金','永豐金','台新金',
+      '台灣50','0050','0056','高股息','存股','股票','股市','基金','選擇權',
+      '期貨','做多','做空','融資','融券','主力','法人','外資','投信','自營',
+      '散戶','技術分析','基本面','殖利率','本益比','財報','配息','除息','填息',
+      '除權','填權','停損','停利','多頭','空頭','盤整','突破','支撐','壓力',
+      '均線','成交量','漲停','跌停','美股','道瓊','那斯達克','升息','降息',
+      '通膨','景氣','營收','獲利','虧損','負債','資產','現金流','股息','股利',
+      '除息日','現股','當沖','波段','長線','短線','加碼','減碼','出清','買超',
+      'KD指標','RSI','MACD','布林通道','量縮','量增','爆量','紅K','黑K',
+      '月線','週線','日線','頭部','底部','反彈','回檔','走跌','走升',
+    ];
+
+    let allComments = [];
+    let currentUrl = '';
+    let commVisible = true;
+
+    // ── helpers ──────────────────────────────────────────
+    function setStatus(msg, type = 'info', spin = true) {
+      const el = document.getElementById('status');
+      const sp = document.getElementById('spin');
+      const tx = document.getElementById('statusTxt');
+      el.className = `status show ${type}`;
+      sp.style.display = spin ? 'block' : 'none';
+      tx.textContent = msg;
+    }
+    function hideStatus() { document.getElementById('status').className = 'status'; }
+
+    function fetchTimeout(url, opts = {}, ms = 12000) {
+      const ac = new AbortController();
+      const id = setTimeout(() => ac.abort(), ms);
+      return fetch(url, { ...opts, signal: ac.signal }).finally(() => clearTimeout(id));
+    }
+
+    // ── proxy fetch：同時射出所有 proxy，誰先回來用誰 ──────
+    async function proxyFetch(url) {
+      setStatus('取得資料中…');
+      const tryProxy = async proxyFn => {
+        const res = await fetchTimeout(proxyFn(url), {}, 20000);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        if (text.includes('年滿 18 歲') || (text.includes('over18') && text.includes('確認'))) {
+          throw new Error('over18');
+        }
+        return text;
+      };
+      try {
+        return await Promise.any(PROXIES.map(tryProxy));
+      } catch {
+        throw new Error('所有 Proxy 均無法連線，請稍後再試');
+      }
+    }
+
+    // ── get last article URL from index ──────────────────
+    async function getLatestArticleUrl() {
+      const html = await proxyFetch(STOCK_INDEX);
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      // All article links (exclude deleted)
+      const links = [...doc.querySelectorAll('#main-container .r-ent .title a')];
+      if (!links.length) throw new Error('無法取得文章列表，可能遭到 PTT 封鎖');
+      const last = links[links.length - 1];
+      return PTT_BASE + last.getAttribute('href');
+    }
+
+    // ── parse article ─────────────────────────────────────
+    function parseArticle(html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+
+      // Title
+      let title = '';
+      for (const el of doc.querySelectorAll('.article-metaline')) {
+        if (el.querySelector('.article-meta-tag')?.textContent.trim() === '標題') {
+          title = el.querySelector('.article-meta-value')?.textContent.trim() || '';
+          break;
+        }
+      }
+      if (!title) title = doc.querySelector('title')?.textContent.replace(' - PTT網頁版','').replace(' - 批踢踢實業坊','') || '未知標題';
+
+      // Comments
+      const comments = [];
+      for (const push of doc.querySelectorAll('.push')) {
+        const tagRaw = push.querySelector('.push-tag')?.textContent.trim() || '→';
+        const tag = tagRaw.startsWith('推') ? '推' : tagRaw.startsWith('噓') ? '噓' : '→';
+        const userid = push.querySelector('.push-userid')?.textContent.trim() || '';
+        const content = push.querySelector('.push-content')?.textContent.replace(/^:\s*/, '').trim() || '';
+        const ipdt = push.querySelector('.push-ipdatetime')?.textContent.trim() || '';
+
+        let datetime = null, timeStr = '';
+        const m = ipdt.match(/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/);
+        if (m) {
+          const yr = new Date().getFullYear();
+          datetime = new Date(yr, +m[1] - 1, +m[2], +m[3], +m[4]);
+          timeStr = `${m[1]}/${m[2]} ${m[3]}:${m[4]}`;
+        }
+        if (content) comments.push({ tag, userid, content, datetime, timeStr });
+      }
+      return { title, comments };
+    }
+
+    // ── filter comments ───────────────────────────────────
+    function filterComments(comments) {
+      const st = document.getElementById('startTime').value;
+      const et = document.getElementById('endTime').value;
+      const types = new Set([...document.querySelectorAll('.pcheck:checked')].map(e => e.value));
+
+      return comments.filter(c => {
+        if (!types.has(c.tag)) return false;
+        if ((st || et) && c.datetime) {
+          const hh = String(c.datetime.getHours()).padStart(2, '0');
+          const mm = String(c.datetime.getMinutes()).padStart(2, '0');
+          const t = `${hh}:${mm}`;
+          if (st && t < st) return false;
+          if (et && t > et) return false;
+        }
+        return true;
+      });
+    }
+
+    // ── text analysis ─────────────────────────────────────
+    // Use Intl.Segmenter (ICU dictionary-based) for proper Chinese word segmentation
+    const segmenter = typeof Intl?.Segmenter !== 'undefined'
+      ? new Intl.Segmenter('zh-TW', { granularity: 'word' })
+      : null;
+
+    const SKIP_EN = new Set(['RE','OK','ID','OP','IM','TO','OF','IN','ON','AT','BY','OR','AND','ETF','GDP','EPS']);
+    const isChinese = w => /[\u4e00-\u9fff]/.test(w);
+    const isUsable  = w => isChinese(w) || /^[A-Z0-9]{2,}$/.test(w);
+
+    function segmentText(text) {
+      if (segmenter) {
+        return [...segmenter.segment(text)]
+          .filter(s => s.isWordLike)
+          .map(s => s.segment.trim())
+          .filter(w => w.length >= 2 && isUsable(w) && !STOP.has(w));
+      }
+      // Fallback: simple Chinese chunk split on 2+ char runs
+      const words = [];
+      for (const chunk of (text.match(/[\u4e00-\u9fff]{2,}/g) || [])) {
+        for (let i = 0; i < chunk.length - 1; i++) {
+          const w = chunk.slice(i, i + 2);
+          if (!STOP.has(w)) words.push(w);
+        }
+      }
+      return words;
+    }
+
+    function analyzeText(comments) {
+      const freq = {};
+
+      for (const c of comments) {
+        // Proper segmentation
+        for (const w of segmentText(c.content)) {
+          freq[w] = (freq[w] || 0) + 1;
+        }
+        // 4-5 digit stock codes
+        for (const code of (c.content.match(/(?<!\d)\d{4,5}(?!\d)/g) || [])) {
+          freq[code] = (freq[code] || 0) + 1;
+        }
+        // Uppercase English (skip noise)
+        for (const en of (c.content.match(/[A-Z]{2,}/g) || [])) {
+          if (!SKIP_EN.has(en)) freq[en] = (freq[en] || 0) + 1;
+        }
+      }
+
+      // Boost predefined stock terms so they're not drowned out by Segmenter splits
+      const allText = comments.map(c => c.content).join('');
+      for (const term of STOCK_TERMS) {
+        const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        const cnt = (allText.match(re) || []).length;
+        if (cnt > 0) freq[term] = Math.max(freq[term] || 0, cnt * 2);
+      }
+
+      return Object.entries(freq)
+        .filter(([w, n]) => n >= 2 && w.length >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 100);
+    }
+
+    // ── word cloud ────────────────────────────────────────
+    function drawCloud(wordFreq) {
+      const wrap = document.getElementById('wordcloudWrap');
+      const canvas = document.getElementById('wordcloud');
+      wrap.style.display = 'block';
+
+      canvas.width  = wrap.clientWidth - 36;
+      canvas.height = Math.max(380, Math.floor(window.innerHeight * 0.52));
+
+      if (!wordFreq.length) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('留言數量不足，無法生成文字雲', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      const maxF = wordFreq[0][1];
+      const list  = wordFreq.map(([w, f]) => [w, Math.round((f / maxF) * 62) + 12]);
+      const COLORS = ['#6ee7b7','#93c5fd','#c4b5fd','#fcd34d','#f9a8d4','#67e8f9','#fb923c'];
+
+      WordCloud(canvas, {
+        list,
+        gridSize: 10,
+        weightFactor: 1,
+        fontFamily: '"Microsoft JhengHei", "PingFang TC", Arial, sans-serif',
+        color: () => COLORS[Math.floor(Math.random() * COLORS.length)],
+        rotateRatio: 0.25,
+        rotationSteps: 2,
+        backgroundColor: '#0f0f1a',
+        minSize: 8,
+        drawOutOfBound: false,
+        click(item) { applyKeyword(item[0]); },
+        hover(item) { canvas.style.cursor = item ? 'pointer' : 'default'; },
+      });
+    }
+
+    // ── comments display ──────────────────────────────────
+    function renderComments(comments) {
+      const wrap = document.getElementById('commWrap');
+      const list = document.getElementById('commList');
+      wrap.style.display = 'block';
+      document.getElementById('commCount').textContent = `(${comments.length} 則)`;
+
+      list.innerHTML = comments.map(c => `
+        <div class="comment ${c.tag === '推' ? 'push' : c.tag === '噓' ? 'boo' : 'neut'}">
+          <span class="ct">${c.tag}</span>
+          <span class="cu">${escHtml(c.userid)}</span>
+          <span class="cc">${escHtml(c.content)}</span>
+          <span class="ctime">${c.timeStr}</span>
+        </div>
+      `).join('');
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── keyword highlight ─────────────────────────────────
+    let activeKw = '';
+    let kwMatchComments = [];  // .comment elements that contain the keyword
+    let kwIndex = -1;
+
+    function applyKeyword(kw) {
+      activeKw = kw;
+      kwMatchComments = [];
+      kwIndex = -1;
+
+      // Highlight all matches
+      for (const el of document.querySelectorAll('.cc')) {
+        const orig = el.textContent;
+        if (!kw) { el.innerHTML = escHtml(orig); continue; }
+        const escaped = escHtml(kw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        el.innerHTML = escHtml(orig).replace(new RegExp(escaped, 'g'), m => `<mark>${m}</mark>`);
+        if (el.querySelector('mark')) kwMatchComments.push(el.closest('.comment'));
+      }
+
+      updateKwbar();
+
+      if (kw && kwMatchComments.length) {
+        kwIndex = 0;
+        scrollToMatch();
+      }
+    }
+
+    function updateKwbar() {
+      const kwbar = document.getElementById('kwbar');
+      if (!activeKw) { kwbar.innerHTML = ''; return; }
+      const total = kwMatchComments.length;
+      const pos = total ? `${kwIndex + 1} / ${total}` : '0 筆';
+      kwbar.innerHTML =
+        `關鍵字：<span class="kwtag">${escHtml(activeKw)}</span>` +
+        `<button class="nav-btn" id="kwPrev">‹ 上一則</button>` +
+        `<span class="nav-pos">${pos}</span>` +
+        `<button class="nav-btn" id="kwNext">下一則 ›</button>` +
+        `<button class="clr" id="clrKw">✕</button>`;
+      document.getElementById('clrKw').addEventListener('click', () => applyKeyword(''));
+      document.getElementById('kwPrev').addEventListener('click', () => { stepMatch(-1); });
+      document.getElementById('kwNext').addEventListener('click', () => { stepMatch(+1); });
+    }
+
+    function stepMatch(dir) {
+      if (!kwMatchComments.length) return;
+      kwIndex = (kwIndex + dir + kwMatchComments.length) % kwMatchComments.length;
+      scrollToMatch();
+      updateKwbar();
+    }
+
+    function scrollToMatch() {
+      const target = kwMatchComments[kwIndex];
+      if (!target) return;
+      // Highlight current match differently
+      kwMatchComments.forEach((el, i) => el.classList.toggle('kw-current', i === kwIndex));
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── main ──────────────────────────────────────────────
+    async function analyze() {
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      allComments = [];
+      activeKw = '';
+      document.getElementById('kwbar').innerHTML = '';
+
+      try {
+        let url = document.getElementById('articleUrl').value.trim();
+        if (!url) {
+          setStatus('正在取得最新文章…');
+          url = await getLatestArticleUrl();
+          document.getElementById('articleUrl').value = url;
+        }
+        currentUrl = url;
+
+        setStatus('取得文章內容中…');
+        const html = await proxyFetch(url);
+
+        setStatus('解析文章中…', 'info', false);
+        const { title, comments } = parseArticle(html);
+        allComments = comments;
+
+        // Article info
+        const info = document.getElementById('articleInfo');
+        document.getElementById('artTitle').textContent = title;
+        document.getElementById('artLink').href = url;
+        document.getElementById('artMeta').textContent = `共 ${comments.length} 則留言`;
+        info.style.display = 'block';
+
+        redraw();
+        hideStatus();
+        setStatus(`分析完成！共 ${filterComments(allComments).length} 則留言`, 'ok', false);
+      } catch (e) {
+        setStatus(e.message, 'err', false);
+        console.error(e);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function redraw() {
+      if (!allComments.length) return;
+      const filtered = filterComments(allComments);
+      document.getElementById('artMeta').textContent =
+        `共 ${allComments.length} 則留言，篩選後 ${filtered.length} 則`;
+      const wf = analyzeText(filtered);
+      drawCloud(wf);
+      renderComments(filtered);
+      applyKeyword(activeKw);
+    }
+
+    // ── events ────────────────────────────────────────────
+    document.getElementById('analyzeBtn').addEventListener('click', analyze);
+
+    document.getElementById('autoFetchBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('autoFetchBtn');
+      btn.disabled = true;
+      try {
+        setStatus('取得最新文章中…');
+        const url = await getLatestArticleUrl();
+        document.getElementById('articleUrl').value = url;
+        setStatus('已取得最新文章網址', 'ok', false);
+      } catch (e) {
+        setStatus(e.message, 'err', false);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('startTime').addEventListener('change', redraw);
+    document.getElementById('endTime').addEventListener('change', redraw);
+    document.querySelectorAll('.pcheck').forEach(el => el.addEventListener('change', redraw));
+
+    document.getElementById('toggleComm').addEventListener('click', () => {
+      const scroll = document.getElementById('commScroll');
+      const btn = document.getElementById('toggleComm');
+      commVisible = !commVisible;
+      scroll.style.display = commVisible ? '' : 'none';
+      btn.textContent = commVisible ? '收合' : '展開';
+    });
+
+    window.addEventListener('resize', () => {
+      if (allComments.length) {
+        const wf = analyzeText(filterComments(allComments));
+        drawCloud(wf);
+      }
+    });
+
+    // Quick time buttons
+    document.querySelectorAll('.quick-times [data-min]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mins = +btn.dataset.min;
+        if (mins === 0) {
+          document.getElementById('startTime').value = '';
+          document.getElementById('endTime').value = '';
+        } else {
+          const now = new Date();
+          const start = new Date(now - mins * 60000);
+          const fmt = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+          document.getElementById('startTime').value = fmt(start);
+          document.getElementById('endTime').value = fmt(now);
+        }
+        redraw();
+      });
+    });
+
+    // Auto-fetch latest article on load
+    (async () => {
+      const btn = document.getElementById('autoFetchBtn');
+      btn.disabled = true;
+      try {
+        setStatus('載入最新文章中…');
+        const url = await getLatestArticleUrl();
+        document.getElementById('articleUrl').value = url;
+        await analyze();
+      } catch (e) {
+        setStatus(e.message, 'err', false);
+        document.getElementById('articleUrl').placeholder = '請手動貼上 PTT 文章網址';
+      } finally {
+        btn.disabled = false;
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>
