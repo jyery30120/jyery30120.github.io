@@ -132,9 +132,10 @@
 
   <div class="card" id="articleInfo" style="display:none">
     <h2 id="artTitle"></h2>
-    <div class="meta-row">
+    <div class="meta-row" style="margin-top:8px">
       <span id="artMeta"></span>
       <a id="artLink" href="#" target="_blank" rel="noopener">在 PTT 開啟 ↗</a>
+      <span id="lastRefresh" style="color:var(--muted)"></span>
     </div>
   </div>
 
@@ -146,7 +147,10 @@
   <div class="card" id="commWrap" style="display:none">
     <div class="comm-header">
       <h3>留言列表 <span id="commCount"></span></h3>
-      <button class="btn btn-sec btn-sm" id="toggleComm">收合</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sec btn-sm" id="refreshBtn">↻ 重新整理</button>
+        <button class="btn btn-sec btn-sm" id="toggleComm">收合</button>
+      </div>
     </div>
     <div class="kwbar" id="kwbar"></div>
     <div class="comm-scroll" id="commScroll">
@@ -420,6 +424,9 @@
           <span class="ctime">${c.timeStr}</span>
         </div>
       `).join('');
+      // Scroll to bottom so newest comment is visible first
+      const scroll = document.getElementById('commScroll');
+      scroll.scrollTop = scroll.scrollHeight;
     }
 
     function escHtml(s) {
@@ -513,6 +520,9 @@
         document.getElementById('artTitle').textContent = title;
         document.getElementById('artLink').href = url;
         document.getElementById('artMeta').textContent = `共 ${comments.length} 則留言`;
+        const now = new Date();
+        document.getElementById('lastRefresh').textContent =
+          `更新於 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
         info.style.display = 'block';
 
         redraw();
@@ -558,6 +568,8 @@
     document.getElementById('startTime').addEventListener('change', redraw);
     document.getElementById('endTime').addEventListener('change', redraw);
     document.querySelectorAll('.pcheck').forEach(el => el.addEventListener('change', redraw));
+
+    document.getElementById('refreshBtn').addEventListener('click', () => analyze());
 
     document.getElementById('toggleComm').addEventListener('click', () => {
       const scroll = document.getElementById('commScroll');
