@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日文練習</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      background: #16213e;
+      padding: 16px 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      border-bottom: 2px solid #0f3460;
+    }
+
+    .tab-btn {
+      padding: 8px 24px;
+      border: 2px solid #e94560;
+      border-radius: 20px;
+      background: transparent;
+      color: #eee;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: #e94560;
+      color: #fff;
+    }
+
+    .page { display: none; width: 100%; max-width: 600px; padding: 32px 16px; }
+    .page.active { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+
+    /* ── 假名練習 ── */
+    .kana-card {
+      width: 100%;
+      background: #16213e;
+      border-radius: 16px;
+      padding: 40px 24px;
+      text-align: center;
+      border: 2px solid #0f3460;
+    }
+
+    .kana-char {
+      font-size: 96px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .kana-hint {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .kana-input {
+      width: 180px;
+      padding: 10px 16px;
+      font-size: 20px;
+      text-align: center;
+      border-radius: 8px;
+      border: 2px solid #0f3460;
+      background: #0f3460;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .kana-input:focus { border-color: #e94560; }
+    .kana-input.correct { border-color: #4caf50; background: #1b3a1f; }
+    .kana-input.wrong { border-color: #e94560; background: #3a1b1f; }
+
+    .kana-feedback {
+      font-size: 18px;
+      height: 28px;
+      font-weight: bold;
+    }
+    .kana-feedback.correct { color: #4caf50; }
+    .kana-feedback.wrong { color: #e94560; }
+
+    .kana-score {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .mode-select {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .mode-btn {
+      padding: 6px 16px;
+      border-radius: 12px;
+      border: 1px solid #0f3460;
+      background: #0f3460;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      border-color: #e94560;
+      color: #fff;
+      background: #2a1030;
+    }
+
+    .btn {
+      padding: 10px 28px;
+      border-radius: 20px;
+      border: none;
+      background: #e94560;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn.secondary {
+      background: #0f3460;
+    }
+
+    /* ── 單字卡 ── */
+    .flashcard-wrap {
+      perspective: 1000px;
+      width: 100%;
+      height: 220px;
+      cursor: pointer;
+    }
+    .flashcard {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+      border-radius: 16px;
+    }
+    .flashcard.flipped { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #0f3460;
+    }
+    .card-front { background: #16213e; }
+    .card-back  { background: #0f3460; transform: rotateY(180deg); }
+
+    .card-jp { font-size: 48px; margin-bottom: 6px; }
+    .card-reading { font-size: 20px; color: #aaa; margin-bottom: 4px; }
+    .card-zh { font-size: 22px; }
+
+    .card-tag {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 11px;
+      background: #e94560;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 8px;
+    }
+
+    .fc-controls {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      justify-content: center;
+    }
+    .btn-know   { background: #4caf50; }
+    .btn-unsure { background: #ff9800; }
+    .btn-no     { background: #e94560; }
+
+    .fc-progress {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .fc-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 13px;
+    }
+    .fc-stats span { color: #aaa; }
+    .fc-stats b { color: #eee; }
+
+    .deck-select {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .complete-msg {
+      text-align: center;
+      padding: 32px;
+      background: #16213e;
+      border-radius: 16px;
+      width: 100%;
+    }
+    .complete-msg h2 { font-size: 28px; margin-bottom: 12px; }
+    .complete-msg p  { color: #aaa; margin-bottom: 20px; }
+
+    /* ── 語音按鈕 ── */
+    .speak-btn {
+      background: none;
+      border: 1.5px solid #0f3460;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 17px;
+      cursor: pointer;
+      color: #aaa;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .speak-btn:hover { border-color: #e94560; color: #fff; background: #2a1030; }
+    .speak-btn.speaking { border-color: #4caf50; color: #4caf50; }
+
+    .card-speak-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+    }
+
+    /* ── Review ── */
+    .review-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #1a1a2e;
+      z-index: 100;
+      overflow-y: auto;
+      padding: 24px 16px;
+    }
+    .review-overlay.active { display: block; }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 600px;
+      margin: 0 auto 20px;
+    }
+    .review-header h2 { font-size: 20px; flex: 1; }
+
+    .review-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+      max-width: 600px;
+      margin: 0 auto 24px;
+    }
+    .review-item {
+      background: #16213e;
+      border-radius: 10px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 2px solid #0f3460;
+    }
+    .review-item.correct { border-color: #4caf50; background: #1b3a1f; }
+    .review-item.wrong   { border-color: #e94560; background: #3a1b1f; }
+    .review-item .ri-char { font-size: 32px; line-height: 1.1; }
+    .review-item .ri-rom  { font-size: 13px; color: #aaa; margin-top: 4px; }
+
+    .review-section { max-width: 600px; margin: 0 auto 20px; }
+    .review-section h3 {
+      font-size: 14px;
+      color: #aaa;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #0f3460;
+    }
+    .review-section h3.know-title   { color: #4caf50; }
+    .review-section h3.unsure-title { color: #ff9800; }
+    .review-section h3.no-title     { color: #e94560; }
+
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .review-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #16213e;
+      border-radius: 10px;
+      padding: 10px 16px;
+      border: 1px solid #0f3460;
+    }
+    .review-row .rr-jp   { font-size: 24px; min-width: 60px; }
+    .review-row .rr-read { font-size: 14px; color: #aaa; flex: 1; }
+    .review-row .rr-zh   { font-size: 14px; color: #ccc; }
+    .review-row .rr-spk  { margin-left: auto; }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="tab-btn active" onclick="showPage('kana')">假名練習</button>
+  <button class="tab-btn" onclick="showPage('flash')">單字卡</button>
+  <select id="voice-select" onchange="changeVoice(this.value)" title="選擇語音" style="margin-left:12px;padding:6px 10px;border-radius:12px;border:1px solid #0f3460;background:#0f3460;color:#ccc;font-size:13px;cursor:pointer;outline:none;">
+    <option value="">載入語音...</option>
+  </select>
+</header>
+
+<!-- ══════════════ 假名練習 ══════════════ -->
+<div id="page-kana" class="page active">
+
+  <div class="mode-select">
+    <button class="mode-btn active" data-mode="hiragana" onclick="setMode(this,'hiragana')">平假名</button>
+    <button class="mode-btn" data-mode="katakana" onclick="setMode(this,'katakana')">片假名</button>
+    <button class="mode-btn" data-mode="both" onclick="setMode(this,'both')">混合</button>
+  </div>
+
+  <div class="kana-card">
+    <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
+      <div class="kana-char" id="kana-char" style="margin-bottom:0">あ</div>
+      <button class="speak-btn" id="kana-speak-btn" onclick="speakKana()" title="播放語音">🔊</button>
+    </div>
+    <div class="kana-hint" id="kana-hint">平假名</div>
+    <input class="kana-input" id="kana-input" placeholder="羅馬拼音" autocomplete="off" spellcheck="false" />
+    <div class="kana-feedback" id="kana-feedback"></div>
+  </div>
+
+  <div class="kana-score" id="kana-score">正確：0 ／ 錯誤：0</div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn secondary" onclick="resetKana()">重新開始</button>
+    <button class="btn secondary" onclick="showKanaReview()">查看記錄</button>
+  </div>
+</div>
+
+<!-- ══════════════ 單字卡 ══════════════ -->
+<div id="page-flash" class="page">
+
+  <div class="deck-select" id="deck-select"></div>
+
+  <div class="flashcard-wrap" onclick="flipCard()">
+    <div class="flashcard" id="flashcard">
+      <div class="card-face card-front">
+        <span class="card-tag" id="card-tag">N5</span>
+        <div class="card-jp" id="card-jp">食べる</div>
+        <div class="card-reading" id="card-reading">たべる</div>
+        <button class="speak-btn card-speak-btn" onclick="event.stopPropagation(); speakCard()" title="播放語音">🔊</button>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-zh" id="card-zh">吃</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fc-progress" id="fc-progress">1 / 10</div>
+
+  <div class="fc-controls">
+    <button class="btn btn-no"    onclick="rateCard('no')">不會 ✗</button>
+    <button class="btn btn-unsure" onclick="rateCard('unsure')">模糊 △</button>
+    <button class="btn btn-know"  onclick="rateCard('know')">會了 ✓</button>
+  </div>
+
+  <div class="fc-stats">
+    <div><b id="stat-know">0</b> <span>會了</span></div>
+    <div><b id="stat-unsure">0</b> <span>模糊</span></div>
+    <div><b id="stat-no">0</b> <span>不會</span></div>
+  </div>
+</div>
+
+<!-- ══════════════ Review Overlay ══════════════ -->
+<div id="review-overlay" class="review-overlay">
+  <div class="review-header">
+    <button class="btn secondary" onclick="closeReview()">← 返回</button>
+    <h2 id="review-title">練習記錄</h2>
+  </div>
+  <div id="review-body"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  假名資料
+// ══════════════════════════════════════
+const HIRAGANA = [
+  {char:'あ',rom:'a'},{char:'い',rom:'i'},{char:'う',rom:'u'},{char:'え',rom:'e'},{char:'お',rom:'o'},
+  {char:'か',rom:'ka'},{char:'き',rom:'ki'},{char:'く',rom:'ku'},{char:'け',rom:'ke'},{char:'こ',rom:'ko'},
+  {char:'さ',rom:'sa'},{char:'し',rom:'shi'},{char:'す',rom:'su'},{char:'せ',rom:'se'},{char:'そ',rom:'so'},
+  {char:'た',rom:'ta'},{char:'ち',rom:'chi'},{char:'つ',rom:'tsu'},{char:'て',rom:'te'},{char:'と',rom:'to'},
+  {char:'な',rom:'na'},{char:'に',rom:'ni'},{char:'ぬ',rom:'nu'},{char:'ね',rom:'ne'},{char:'の',rom:'no'},
+  {char:'は',rom:'ha'},{char:'ひ',rom:'hi'},{char:'ふ',rom:'fu'},{char:'へ',rom:'he'},{char:'ほ',rom:'ho'},
+  {char:'ま',rom:'ma'},{char:'み',rom:'mi'},{char:'む',rom:'mu'},{char:'め',rom:'me'},{char:'も',rom:'mo'},
+  {char:'や',rom:'ya'},{char:'ゆ',rom:'yu'},{char:'よ',rom:'yo'},
+  {char:'ら',rom:'ra'},{char:'り',rom:'ri'},{char:'る',rom:'ru'},{char:'れ',rom:'re'},{char:'ろ',rom:'ro'},
+  {char:'わ',rom:'wa'},{char:'を',rom:'wo'},{char:'ん',rom:'n'},
+  {char:'が',rom:'ga'},{char:'ぎ',rom:'gi'},{char:'ぐ',rom:'gu'},{char:'げ',rom:'ge'},{char:'ご',rom:'go'},
+  {char:'ざ',rom:'za'},{char:'じ',rom:'ji'},{char:'ず',rom:'zu'},{char:'ぜ',rom:'ze'},{char:'ぞ',rom:'zo'},
+  {char:'だ',rom:'da'},{char:'ぢ',rom:'di'},{char:'づ',rom:'du'},{char:'で',rom:'de'},{char:'ど',rom:'do'},
+  {char:'ば',rom:'ba'},{char:'び',rom:'bi'},{char:'ぶ',rom:'bu'},{char:'べ',rom:'be'},{char:'ぼ',rom:'bo'},
+  {char:'ぱ',rom:'pa'},{char:'ぴ',rom:'pi'},{char:'ぷ',rom:'pu'},{char:'ぺ',rom:'pe'},{char:'ぽ',rom:'po'},
+];
+
+const KATAKANA = [
+  {char:'ア',rom:'a'},{char:'イ',rom:'i'},{char:'ウ',rom:'u'},{char:'エ',rom:'e'},{char:'オ',rom:'o'},
+  {char:'カ',rom:'ka'},{char:'キ',rom:'ki'},{char:'ク',rom:'ku'},{char:'ケ',rom:'ke'},{char:'コ',rom:'ko'},
+  {char:'サ',rom:'sa'},{char:'シ',rom:'shi'},{char:'ス',rom:'su'},{char:'セ',rom:'se'},{char:'ソ',rom:'so'},
+  {char:'タ',rom:'ta'},{char:'チ',rom:'chi'},{char:'ツ',rom:'tsu'},{char:'テ',rom:'te'},{char:'ト',rom:'to'},
+  {char:'ナ',rom:'na'},{char:'ニ',rom:'ni'},{char:'ヌ',rom:'nu'},{char:'ネ',rom:'ne'},{char:'ノ',rom:'no'},
+  {char:'ハ',rom:'ha'},{char:'ヒ',rom:'hi'},{char:'フ',rom:'fu'},{char:'ヘ',rom:'he'},{char:'ホ',rom:'ho'},
+  {char:'マ',rom:'ma'},{char:'ミ',rom:'mi'},{char:'ム',rom:'mu'},{char:'メ',rom:'me'},{char:'モ',rom:'mo'},
+  {char:'ヤ',rom:'ya'},{char:'ユ',rom:'yu'},{char:'ヨ',rom:'yo'},
+  {char:'ラ',rom:'ra'},{char:'リ',rom:'ri'},{char:'ル',rom:'ru'},{char:'レ',rom:'re'},{char:'ロ',rom:'ro'},
+  {char:'ワ',rom:'wa'},{char:'ヲ',rom:'wo'},{char:'ン',rom:'n'},
+  {char:'ガ',rom:'ga'},{char:'ギ',rom:'gi'},{char:'グ',rom:'gu'},{char:'ゲ',rom:'ge'},{char:'ゴ',rom:'go'},
+  {char:'ザ',rom:'za'},{char:'ジ',rom:'ji'},{char:'ズ',rom:'zu'},{char:'ゼ',rom:'ze'},{char:'ゾ',rom:'zo'},
+  {char:'ダ',rom:'da'},{char:'ヂ',rom:'di'},{char:'ヅ',rom:'du'},{char:'デ',rom:'de'},{char:'ド',rom:'do'},
+  {char:'バ',rom:'ba'},{char:'ビ',rom:'bi'},{char:'ブ',rom:'bu'},{char:'ベ',rom:'be'},{char:'ボ',rom:'bo'},
+  {char:'パ',rom:'pa'},{char:'ピ',rom:'pi'},{char:'プ',rom:'pu'},{char:'ペ',rom:'pe'},{char:'ポ',rom:'po'},
+];
+
+// ══════════════════════════════════════
+//  單字資料
+// ══════════════════════════════════════
+const DECKS = {
+  'N5 基礎': [
+    {jp:'食べる', read:'たべる', zh:'吃', level:'N5'},
+    {jp:'飲む',   read:'のむ',   zh:'喝', level:'N5'},
+    {jp:'見る',   read:'みる',   zh:'看', level:'N5'},
+    {jp:'行く',   read:'いく',   zh:'去', level:'N5'},
+    {jp:'来る',   read:'くる',   zh:'來', level:'N5'},
+    {jp:'買う',   read:'かう',   zh:'買', level:'N5'},
+    {jp:'書く',   read:'かく',   zh:'寫', level:'N5'},
+    {jp:'読む',   read:'よむ',   zh:'讀', level:'N5'},
+    {jp:'聞く',   read:'きく',   zh:'聽/問', level:'N5'},
+    {jp:'話す',   read:'はなす', zh:'說', level:'N5'},
+    {jp:'大きい', read:'おおきい', zh:'大的', level:'N5'},
+    {jp:'小さい', read:'ちいさい', zh:'小的', level:'N5'},
+    {jp:'新しい', read:'あたらしい', zh:'新的', level:'N5'},
+    {jp:'古い',   read:'ふるい',  zh:'舊的', level:'N5'},
+    {jp:'高い',   read:'たかい',  zh:'高/貴的', level:'N5'},
+  ],
+  'N5 名詞': [
+    {jp:'電車', read:'でんしゃ', zh:'電車', level:'N5'},
+    {jp:'学校', read:'がっこう', zh:'學校', level:'N5'},
+    {jp:'会社', read:'かいしゃ', zh:'公司', level:'N5'},
+    {jp:'病院', read:'びょういん', zh:'醫院', level:'N5'},
+    {jp:'駅',   read:'えき',     zh:'車站', level:'N5'},
+    {jp:'空港', read:'くうこう', zh:'機場', level:'N5'},
+    {jp:'図書館',read:'としょかん',zh:'圖書館', level:'N5'},
+    {jp:'食堂', read:'しょくどう', zh:'食堂', level:'N5'},
+    {jp:'水',   read:'みず',     zh:'水', level:'N5'},
+    {jp:'肉',   read:'にく',     zh:'肉', level:'N5'},
+    {jp:'魚',   read:'さかな',   zh:'魚', level:'N5'},
+    {jp:'野菜', read:'やさい',   zh:'蔬菜', level:'N5'},
+  ],
+  'N4 動詞': [
+    {jp:'起きる', read:'おきる',   zh:'起床', level:'N4'},
+    {jp:'寝る',   read:'ねる',     zh:'睡覺', level:'N4'},
+    {jp:'働く',   read:'はたらく', zh:'工作', level:'N4'},
+    {jp:'遊ぶ',   read:'あそぶ',   zh:'玩耍', level:'N4'},
+    {jp:'教える', read:'おしえる', zh:'教/告知', level:'N4'},
+    {jp:'覚える', read:'おぼえる', zh:'記住', level:'N4'},
+    {jp:'忘れる', read:'わすれる', zh:'忘記', level:'N4'},
+    {jp:'使う',   read:'つかう',   zh:'使用', level:'N4'},
+    {jp:'走る',   read:'はしる',   zh:'跑', level:'N4'},
+    {jp:'泳ぐ',   read:'およぐ',   zh:'游泳', level:'N4'},
+  ],
+};
+
+// ══════════════════════════════════════
+//  語音播放
+// ══════════════════════════════════════
+let jpVoice = null;
+let allJpVoices = [];
+
+function initVoice() {
+  const load = () => {
+    const voices = speechSynthesis.getVoices();
+    allJpVoices = voices
+      .filter(v => v.lang === 'ja-JP' || v.lang.startsWith('ja'))
+      .sort((a, b) => {
+        const aMatch = /日本語/i.test(a.name) ? 0 : 1;
+        const bMatch = /日本語/i.test(b.name) ? 0 : 1;
+        return aMatch - bMatch;
+      });
+    if (allJpVoices.length === 0) return;
+
+    const sel = document.getElementById('voice-select');
+    sel.innerHTML = '';
+    allJpVoices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.name.replace(/Microsoft |Google /, '');
+      sel.appendChild(opt);
+    });
+
+    jpVoice = allJpVoices[0];
+    sel.value = 0;
+  };
+  load();
+  speechSynthesis.onvoiceschanged = load;
+}
+
+function changeVoice(idx) {
+  if (allJpVoices[idx]) jpVoice = allJpVoices[idx];
+}
+
+function speak(text, btnId) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ja-JP';
+  utter.rate = 0.85;
+  if (jpVoice) utter.voice = jpVoice;
+
+  if (btnId) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.classList.add('speaking');
+      utter.onend = () => btn.classList.remove('speaking');
+      utter.onerror = () => btn.classList.remove('speaking');
+    }
+  }
+  speechSynthesis.speak(utter);
+}
+
+function speakKana()  { speak(kanaPool[kanaIndex]?.char, 'kana-speak-btn'); }
+function speakCard()  { speak(currentDeck[fcIndex]?.jp, 'card-speak-btn'); }
+
+// ══════════════════════════════════════
+//  假名練習邏輯
+// ══════════════════════════════════════
+let kanaMode = 'hiragana';
+let kanaPool = [];
+let kanaIndex = 0;
+let kanaCorrect = 0;
+let kanaWrong = 0;
+let waitNext = false;
+let kanaHistory = []; // {char, rom, result:'correct'|'wrong'}
+
+function getPool(mode) {
+  let pool = mode === 'hiragana' ? [...HIRAGANA]
+           : mode === 'katakana' ? [...KATAKANA]
+           : [...HIRAGANA, ...KATAKANA];
+  return pool.sort(() => Math.random() - 0.5);
+}
+
+function setMode(btn, mode) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  kanaMode = mode;
+  resetKana();
+}
+
+function resetKana() {
+  kanaPool = getPool(kanaMode);
+  kanaIndex = 0;
+  kanaCorrect = 0;
+  kanaWrong = 0;
+  waitNext = false;
+  kanaHistory = [];
+  showKana();
+  updateKanaScore();
+  const inp = document.getElementById('kana-input');
+  inp.value = '';
+  inp.className = 'kana-input';
+  document.getElementById('kana-feedback').textContent = '';
+  document.getElementById('kana-feedback').className = 'kana-feedback';
+}
+
+function showKana() {
+  const item = kanaPool[kanaIndex];
+  document.getElementById('kana-char').textContent = item.char;
+  const isHira = HIRAGANA.some(h => h.char === item.char);
+  document.getElementById('kana-hint').textContent = isHira ? '平假名' : '片假名';
+}
+
+function updateKanaScore() {
+  document.getElementById('kana-score').textContent =
+    `正確：${kanaCorrect} ／ 錯誤：${kanaWrong}`;
+}
+
+function nextKana() {
+  kanaIndex = (kanaIndex + 1) % kanaPool.length;
+  if (kanaIndex === 0) kanaPool = kanaPool.sort(() => Math.random() - 0.5); // reshuffle
+  showKana();
+  const inp = document.getElementById('kana-input');
+  inp.value = '';
+  inp.className = 'kana-input';
+  document.getElementById('kana-feedback').textContent = '';
+  document.getElementById('kana-feedback').className = 'kana-feedback';
+  waitNext = false;
+  inp.focus();
+}
+
+document.getElementById('kana-input').addEventListener('input', function () {
+  if (waitNext) return;
+  const val = this.value.trim().toLowerCase();
+  const item = kanaPool[kanaIndex];
+  // accept multiple readings (e.g. shi/si, chi/ti, tsu/tu)
+  const alts = { shi:['si'], chi:['ti'], tsu:['tu'], fu:['hu'], ji:['zi'], di:['ji'] };
+  const accepted = [item.rom];
+  if (alts[item.rom]) accepted.push(...alts[item.rom]);
+  // also reverse
+  for (const [k,vs] of Object.entries(alts)) {
+    if (vs.includes(item.rom)) accepted.push(k);
+  }
+
+  if (val.length < Math.min(...accepted.map(a => a.length))) return;
+
+  const fb = document.getElementById('kana-feedback');
+  if (accepted.includes(val)) {
+    this.className = 'kana-input correct';
+    fb.textContent = '正確！';
+    fb.className = 'kana-feedback correct';
+    kanaCorrect++;
+    waitNext = true;
+    kanaHistory.push({char: item.char, rom: item.rom, result: 'correct'});
+    updateKanaScore();
+    speak(item.char, 'kana-speak-btn');
+    setTimeout(nextKana, 700);
+  } else if (val.length >= Math.max(...accepted.map(a => a.length))) {
+    this.className = 'kana-input wrong';
+    fb.textContent = `答案是：${item.rom}`;
+    fb.className = 'kana-feedback wrong';
+    kanaWrong++;
+    waitNext = true;
+    kanaHistory.push({char: item.char, rom: item.rom, result: 'wrong'});
+    updateKanaScore();
+    speak(item.char, 'kana-speak-btn');
+    setTimeout(nextKana, 1200);
+  }
+});
+
+// ══════════════════════════════════════
+//  單字卡邏輯
+// ══════════════════════════════════════
+let currentDeck = [];
+let fcIndex = 0;
+let fcFlipped = false;
+let stats = { know: 0, unsure: 0, no: 0 };
+let cardHistory = { know: [], unsure: [], no: [] };
+
+function buildDeckButtons() {
+  const wrap = document.getElementById('deck-select');
+  wrap.innerHTML = '';
+  Object.keys(DECKS).forEach((name, i) => {
+    const b = document.createElement('button');
+    b.className = 'mode-btn' + (i === 0 ? ' active' : '');
+    b.textContent = name;
+    b.onclick = () => {
+      document.querySelectorAll('#deck-select .mode-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      loadDeck(name);
+    };
+    wrap.appendChild(b);
+  });
+}
+
+function loadDeck(name) {
+  currentDeck = [...DECKS[name]].sort(() => Math.random() - 0.5);
+  fcIndex = 0;
+  stats = { know: 0, unsure: 0, no: 0 };
+  cardHistory = { know: [], unsure: [], no: [] };
+  updateStats();
+  showCard();
+}
+
+function showCard() {
+  if (fcIndex >= currentDeck.length) {
+    showComplete();
+    return;
+  }
+  const card = currentDeck[fcIndex];
+  const flashcard = document.getElementById('flashcard');
+
+  fcFlipped = false;
+  flashcard.classList.remove('flipped');
+
+  // 等翻面動畫結束後再換內容（transition 0.5s）
+  setTimeout(() => {
+    document.getElementById('card-jp').textContent = card.jp;
+    document.getElementById('card-reading').textContent = card.read;
+    document.getElementById('card-zh').textContent = card.zh;
+    document.getElementById('card-tag').textContent = card.level;
+    document.getElementById('fc-progress').textContent = `${fcIndex + 1} / ${currentDeck.length}`;
+  }, 500);
+}
+
+function flipCard() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', fcFlipped);
+}
+
+function rateCard(rating) {
+  stats[rating]++;
+  cardHistory[rating].push(currentDeck[fcIndex]);
+  updateStats();
+  fcIndex++;
+  showCard();
+}
+
+function updateStats() {
+  document.getElementById('stat-know').textContent = stats.know;
+  document.getElementById('stat-unsure').textContent = stats.unsure;
+  document.getElementById('stat-no').textContent = stats.no;
+}
+
+function showComplete() {
+  const wrap = document.getElementById('flashcard').parentElement;
+  wrap.innerHTML = `
+    <div class="complete-msg">
+      <h2>完成！</h2>
+      <p>會了 ${stats.know} ／ 模糊 ${stats.unsure} ／ 不會 ${stats.no}</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn secondary" onclick="showCardReview()">查看記錄</button>
+        <button class="btn" onclick="reloadDeck()">再練一次</button>
+      </div>
+    </div>
+  `;
+}
+
+function reloadDeck() {
+  // rebuild flashcard DOM
+  document.getElementById('page-flash').innerHTML = `
+    <div class="deck-select" id="deck-select"></div>
+    <div class="flashcard-wrap" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="card-face card-front">
+          <span class="card-tag" id="card-tag"></span>
+          <div class="card-jp" id="card-jp"></div>
+          <div class="card-reading" id="card-reading"></div>
+          <button class="speak-btn card-speak-btn" onclick="event.stopPropagation(); speakCard()" title="播放語音">🔊</button>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-zh" id="card-zh"></div>
+        </div>
+      </div>
+    </div>
+    <div class="fc-progress" id="fc-progress"></div>
+    <div class="fc-controls">
+      <button class="btn btn-no"    onclick="rateCard('no')">不會 ✗</button>
+      <button class="btn btn-unsure" onclick="rateCard('unsure')">模糊 △</button>
+      <button class="btn btn-know"  onclick="rateCard('know')">會了 ✓</button>
+    </div>
+    <div class="fc-stats">
+      <div><b id="stat-know">0</b> <span>會了</span></div>
+      <div><b id="stat-unsure">0</b> <span>模糊</span></div>
+      <div><b id="stat-no">0</b> <span>不會</span></div>
+    </div>
+  `;
+  buildDeckButtons();
+  const firstName = Object.keys(DECKS)[0];
+  loadDeck(firstName);
+}
+
+// ══════════════════════════════════════
+//  Review
+// ══════════════════════════════════════
+function showKanaReview() {
+  if (kanaHistory.length === 0) {
+    alert('還沒有練習記錄！');
+    return;
+  }
+  document.getElementById('review-title').textContent =
+    `練習記錄（正確 ${kanaCorrect} ／ 錯誤 ${kanaWrong}）`;
+
+  const wrongItems = kanaHistory.filter(h => h.result === 'wrong');
+  const correctItems = kanaHistory.filter(h => h.result === 'correct');
+
+  let html = '';
+  if (wrongItems.length) {
+    html += `<div class="review-section"><h3 class="no-title">答錯 ${wrongItems.length} 題</h3><div class="review-grid">`;
+    wrongItems.forEach(h => {
+      html += `<div class="review-item wrong">
+        <div class="ri-char">${h.char}</div>
+        <div class="ri-rom">${h.rom}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  if (correctItems.length) {
+    html += `<div class="review-section"><h3 class="know-title">答對 ${correctItems.length} 題</h3><div class="review-grid">`;
+    correctItems.forEach(h => {
+      html += `<div class="review-item correct">
+        <div class="ri-char">${h.char}</div>
+        <div class="ri-rom">${h.rom}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('review-body').innerHTML = html;
+  document.getElementById('review-overlay').classList.add('active');
+}
+
+function showCardReview() {
+  document.getElementById('review-title').textContent = '單字卡記錄';
+
+  const sections = [
+    { key: 'no',     label: '不會', cls: 'no-title' },
+    { key: 'unsure', label: '模糊', cls: 'unsure-title' },
+    { key: 'know',   label: '會了', cls: 'know-title' },
+  ];
+
+  let html = '';
+  sections.forEach(({ key, label, cls }) => {
+    const cards = cardHistory[key];
+    if (!cards.length) return;
+    html += `<div class="review-section"><h3 class="${cls}">${label} ${cards.length} 張</h3><div class="review-list">`;
+    cards.forEach((c, i) => {
+      const id = `rv-spk-${key}-${i}`;
+      html += `<div class="review-row">
+        <div class="rr-jp">${c.jp}</div>
+        <div class="rr-read">${c.read}</div>
+        <div class="rr-zh">${c.zh}</div>
+        <button class="speak-btn rr-spk" id="${id}" onclick="speak('${c.jp}','${id}')" title="播放">🔊</button>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  if (!html) html = '<p style="text-align:center;color:#888;padding:40px;">尚無記錄</p>';
+  document.getElementById('review-body').innerHTML = html;
+  document.getElementById('review-overlay').classList.add('active');
+}
+
+function closeReview() {
+  document.getElementById('review-overlay').classList.remove('active');
+}
+
+// ══════════════════════════════════════
+//  Tab 切換
+// ══════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ══════════════════════════════════════
+//  初始化
+// ══════════════════════════════════════
+initVoice();
+resetKana();
+buildDeckButtons();
+loadDeck(Object.keys(DECKS)[0]);
+document.getElementById('kana-input').focus();
+</script>
+</body>
+</html>
