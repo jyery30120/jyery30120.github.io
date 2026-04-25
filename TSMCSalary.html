@@ -51,7 +51,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .month-name{font-weight:600;white-space:nowrap;}
 .month-total{font-weight:700;text-align:right;color:var(--text);}
 .items-list{display:flex;flex-wrap:wrap;gap:.3rem;}
-.item-chip{background:var(--surface2);border-radius:4px;padding:.15rem .45rem;font-size:.73rem;white-space:nowrap;}
+.item-chip{background:var(--surface2);border-radius:4px;padding:.15rem .45rem;font-size:.73rem;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
 .item-chip.salary{border-left:3px solid var(--accent);}
 .item-chip.stock{border-left:3px solid var(--accent2);}
 .item-chip.quarterly{border-left:3px solid var(--yellow);}
@@ -61,6 +61,16 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .year-footer{background:var(--surface2);padding:.6rem 1.2rem;display:flex;justify-content:flex-end;gap:2rem;font-size:.82rem;}
 .year-footer span{color:var(--muted);}
 .year-footer strong{color:var(--text);}
+
+@media(max-width:640px){
+  .month-table thead{display:none;}
+  .month-table tr{display:block;border-top:1px solid #1e2035;padding:.5rem 0;}
+  .month-table td{display:block;border:none;padding:.2rem .75rem;}
+  .month-total{text-align:left !important;color:var(--accent);font-size:.85rem;}
+  .month-total::before{content:'小計：';color:var(--muted);font-weight:400;}
+  .item-chip{white-space:normal;word-break:break-word;}
+  .year-header .year-salary{display:none;}
+}
 
 /* 10-year table */
 .ten-year{max-width:1300px;margin:0 auto 3rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
