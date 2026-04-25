@@ -200,7 +200,7 @@ function calculate() {
       const payAbsMonth = (year - 1) * 12 + payMonth;
       const covYear = year + info.yearOffset;
 
-      if (payAbsMonth < startMonth) { qPaid[`${year}-${payMonth}`] = 0; continue; }
+      if (payAbsMonth < startMonth) { qPaid[`${year}-${payMonth}`] = { amount: 0, effMonths: 0 }; continue; }
 
       let eligible = 0;
       for (const m of info.months) {
@@ -213,7 +213,8 @@ function calculate() {
       const bonusSalary = (payMonth === 5)
         ? getSalaryAt((year - 1) * 12 + 3)
         : getSalaryAt(payAbsMonth);
-      qPaid[`${year}-${payMonth}`] = bonusSalary * quarterlyMonths * (eligible / 3) * bonusGrowth;
+      const effMonths = quarterlyMonths * (eligible / 3) * bonusGrowth;
+      qPaid[`${year}-${payMonth}`] = { amount: bonusSalary * effMonths, effMonths };
     }
   }
 
@@ -244,9 +245,9 @@ function calculate() {
 
       // 3. Quarterly bonus (Feb, May, Aug, Nov)
       if (QUARTERS[month]) {
-        const bonus = qPaid[`${year}-${month}`] || 0;
-        if (bonus > 0) {
-          income += bonus;
+        const q = qPaid[`${year}-${month}`] || { amount: 0, effMonths: 0 };
+        if (q.amount > 0) {
+          income += q.amount;
           const info = QUARTERS[month];
           const covYear = year + info.yearOffset;
           let eligible = 0;
@@ -256,16 +257,16 @@ function calculate() {
           const label = eligible < 3
             ? `季分紅 ${QUARTERS[month].label} (${eligible}/3)`
             : `季分紅 ${QUARTERS[month].label}`;
-          items.push({ label, amount: bonus, cls: 'quarterly' });
+          items.push({ label, amount: q.amount, effMonths: q.effMonths, cls: 'quarterly' });
         }
       }
 
       // 4. July bonus: current year Feb + previous year May+Aug+Nov
       if (month === 7 && year >= 2) {
-        const curFeb  = qPaid[`${year}-2`]    || 0;
-        const prevMay = qPaid[`${year-1}-5`]  || 0;
-        const prevAug = qPaid[`${year-1}-8`]  || 0;
-        const prevNov = qPaid[`${year-1}-11`] || 0;
+        const curFeb  = (qPaid[`${year}-2`]    || { amount: 0 }).amount;
+        const prevMay = (qPaid[`${year-1}-5`]  || { amount: 0 }).amount;
+        const prevAug = (qPaid[`${year-1}-8`]  || { amount: 0 }).amount;
+        const prevNov = (qPaid[`${year-1}-11`] || { amount: 0 }).amount;
         const julyBonus = curFeb + prevMay + prevAug + prevNov;
         if (julyBonus > 0) {
           income += julyBonus;
@@ -360,9 +361,10 @@ function renderResults(results, baseSalary, startMonth) {
   // Year-by-year detail
   let yearsHTML = results.map(r => {
     const monthRows = r.months.map(m => {
-      const chips = m.items.map(it =>
-        `<span class="item-chip ${it.cls}">${it.label}：${fmt(it.amount)}</span>`
-      ).join('');
+      const chips = m.items.map(it => {
+        const suffix = it.effMonths != null ? ` ( ${it.effMonths.toFixed(2)} 個月 )` : '';
+        return `<span class="item-chip ${it.cls}">${it.label}：${fmt(it.amount)}${suffix}</span>`;
+      }).join('');
       return `
         <tr>
           <td class="month-name">${MONTH_NAMES[m.month]}</td>
