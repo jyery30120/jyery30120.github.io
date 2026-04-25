@@ -107,9 +107,9 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
     <span class="hint">每年10月發放</span>
   </div>
   <div class="field">
-    <label>分紅年複合成長率（%）</label>
+    <label>季分紅成長率（%）</label>
     <input type="number" id="bonusGrowthRate" value="0" step="0.5">
-    <span class="hint">每年季分紅額外成長</span>
+    <span class="hint">每季分紅額外成長</span>
   </div>
   <div class="field">
     <label>投資年化報酬率（%）</label>
@@ -156,6 +156,9 @@ function calculate() {
   const qualifyAbsMonth = startMonth + 3;
 
   // Pre-calculate all quarterly bonus amounts paid in each (year, payMonth) for years 1-10
+  // Quarter order within each year: Feb=0, May=1, Aug=2, Nov=3
+  const quarterOrder = { 2: 0, 5: 1, 8: 2, 11: 3 };
+
   const qPaid = {}; // key: `${year}-${month}`
   for (let year = 1; year <= 10; year++) {
     const salary = baseSalary * Math.pow(1 + raiseRate, year - 1);
@@ -176,7 +179,9 @@ function calculate() {
       const bonusSalary = (payMonth === 2 && year > 1)
         ? baseSalary * Math.pow(1 + raiseRate, year - 2)
         : salary;
-      const bonusGrowth = Math.pow(1 + bonusGrowthRate, year - 1);
+      // Quarter index: each quarter compounds separately (year 1 Feb = index 0)
+      const qIdx = (year - 1) * 4 + quarterOrder[payMonth];
+      const bonusGrowth = Math.pow(1 + bonusGrowthRate, qIdx);
       qPaid[`${year}-${payMonth}`] = bonusSalary * quarterlyMonths * (eligible / 3) * bonusGrowth;
     }
   }
@@ -334,7 +339,7 @@ function renderResults(results, baseSalary, startMonth) {
   `;
 
   // Year-by-year detail
-  let yearsHTML = results.map((r, idx) => {
+  let yearsHTML = results.map(r => {
     const monthRows = r.months.map(m => {
       const chips = m.items.map(it =>
         `<span class="item-chip ${it.cls}">${it.label}：${fmt(it.amount)}</span>`
@@ -348,16 +353,15 @@ function renderResults(results, baseSalary, startMonth) {
       `;
     }).join('');
 
-    const isFirst = idx === 0;
     return `
       <div class="year-block">
-        <div class="year-header ${isFirst ? 'open' : ''}" onclick="toggleYear(this)">
+        <div class="year-header" onclick="toggleYear(this)">
           <span class="year-label">第 ${r.year} 年</span>
           <span class="year-salary">月薪 ${fmt(r.salary)}</span>
           <span class="year-total">${fmt(r.yearTotal)}</span>
           <span class="chevron">▶</span>
         </div>
-        <div class="year-body ${isFirst ? 'open' : ''}">
+        <div class="year-body">
           <table class="month-table">
             <thead><tr>
               <th style="width:70px">月份</th>
