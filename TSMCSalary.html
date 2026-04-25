@@ -38,7 +38,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .year-header{display:flex;justify-content:space-between;align-items:center;padding:.85rem 1.2rem;cursor:pointer;user-select:none;transition:.15s;}
 .year-header:hover{background:var(--surface2);}
 .year-header .year-label{font-weight:700;font-size:1rem;}
-.year-header .year-total{font-size:1rem;font-weight:700;color:var(--green);}
+.year-header .year-total{font-size:1rem;font-weight:700;color:var(--accent);}
 .year-header .year-salary{font-size:.8rem;color:var(--muted);}
 .year-header .chevron{color:var(--muted);transition:.2s;font-size:.8rem;}
 .year-header.open .chevron{transform:rotate(90deg);}
@@ -402,7 +402,7 @@ function renderResults(results, baseSalary, startMonth) {
             <tbody>${monthRows}</tbody>
           </table>
           <div class="year-footer">
-            <span>年度合計：<strong>${fmt(r.yearTotal)}</strong></span>
+            <span>年度合計：<strong style="color:var(--accent)">${fmt(r.yearTotal)}</strong></span>
             <span>累計：<strong style="color:var(--green)">${fmt(r.cumulativeTotal)}</strong></span>
           </div>
         </div>
