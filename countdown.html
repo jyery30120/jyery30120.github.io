@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>倒數日</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --text: #1a1a2e;
+      --sub: #888;
+      --radius: 16px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.07);
+      --shadow-hover: 0 8px 28px rgba(0,0,0,0.13);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2.5rem 1.25rem 5rem;
+    }
+
+    header { text-align: center; margin-bottom: 2.75rem; }
+    header h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.05em; }
+    header p  { margin-top: 0.4rem; color: var(--sub); font-size: 0.95rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── base card ── */
+    .card {
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      box-shadow: var(--shadow);
+      transition: transform .18s ease, box-shadow .18s ease;
+      border-left: 4px solid transparent;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+
+    /* ── card themes ── */
+    .card--past   { background: #fff8f8; border-color: #e57373; }
+    .card--future { background: #f0f8ff; border-color: #42a5f5; }
+    .card--annual { background: linear-gradient(135deg,#f9f0ff,#f0f0ff); border-color: #ab47bc; }
+    .card--today  { background: linear-gradient(135deg,#fffde7,#fff9c4); border-color: #ffd54f; }
+
+    /* ── label chip ── */
+    .card-label {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 0.55rem;
+    }
+    .card--past   .card-label { background: #fde8e8; color: #c62828; }
+    .card--future .card-label { background: #e1f0ff; color: #1565c0; }
+    .card--annual .card-label { background: #f3e5f5; color: #6a1b9a; }
+    .card--today  .card-label { background: #fff8e1; color: #e65100; }
+
+    /* ── name ── */
+    .card-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.35;
+      margin-bottom: 0.9rem;
+    }
+
+    /* ── date hint ── */
+    .card-date {
+      font-size: 0.76rem;
+      color: var(--sub);
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    /* ── big number ── */
+    .card-number {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1;
+      display: block;
+      margin: 0.2rem 0 0.1rem;
+    }
+    .card--past   .card-number { color: #b71c1c; }
+    .card--future .card-number { color: #0d47a1; }
+    .card--annual .card-first  { color: #4a148c; }
+    .card--annual .card-next   { color: #283593; }
+
+    /* ── unit label ── */
+    .card-unit { font-size: 0.88rem; color: var(--sub); font-weight: 500; }
+
+    /* ── today highlight ── */
+    .card-today-txt {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #e65100;
+      margin-top: 0.4rem;
+    }
+
+    /* ── annual two-section layout ── */
+    .card-divider {
+      height: 1px;
+      background: rgba(0,0,0,0.09);
+      margin: 1rem 0;
+    }
+    .annual-section .card-number { font-size: 2.6rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>倒數日</h1>
+  <p id="today-label"></p>
+</header>
+
+<main class="grid" id="grid"></main>
+
+<script>
+/* ================================================================
+   事件清單 — 只需要修改這裡
+   ──────────────────────────────────────────────────────────────
+   單次事件：
+     { name: "事件名稱", date: "YYYY-MM-DD" }
+
+   每年重複（生日、紀念日）：
+     { name: "事件名稱", date: "YYYY-MM-DD", annual: true }
+     ↑ date 填「第一次發生的日期」
+   ──────────────────────────────────────────────────────────────
+================================================================ */
+const EVENTS = [
+  { name: "我的生日",         date: "1996-08-05", annual: true },
+  { name: "名古屋旅行",       date: "2026-11-05" },
+  { name: "2027 元旦",            date: "2027-01-01"},
+  { name: "登積",            date: "2025-10-13" },
+];
+/* ============================================================== */
+
+
+// ── helpers ────────────────────────────────────────────────────
+
+function todayMidnight() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function parseDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// positive = b is after a
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function nextAnnualDate(evDate, today) {
+  const thisYear = new Date(today.getFullYear(), evDate.getMonth(), evDate.getDate());
+  return thisYear >= today
+    ? thisYear
+    : new Date(today.getFullYear() + 1, evDate.getMonth(), evDate.getDate());
+}
+
+function fmt(date) {
+  return `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function num(n) {
+  return n.toLocaleString('zh-TW');
+}
+
+// ── render ─────────────────────────────────────────────────────
+
+const TODAY = todayMidnight();
+document.getElementById('today-label').textContent = `今天是 ${fmt(TODAY)}`;
+
+const grid = document.getElementById('grid');
+
+EVENTS.forEach(ev => {
+  const evDate = parseDate(ev.date);
+  const diff   = daysBetween(evDate, TODAY); // >0 past, <0 future, 0 today
+  const card   = document.createElement('div');
+
+  if (ev.annual) {
+    const sinceFirst  = daysBetween(evDate, TODAY);
+    const next        = nextAnnualDate(evDate, TODAY);
+    const untilNext   = daysBetween(TODAY, next);
+
+    card.className = 'card card--annual';
+    card.innerHTML = `
+      <div class="card-label">每年重複</div>
+      <div class="card-name">${ev.name}</div>
+
+      <div class="annual-section">
+        <span class="card-date">自 ${fmt(evDate)}</span>
+        <span class="card-number card-first">${num(sinceFirst)}</span>
+        <span class="card-unit">天前 · 第一次</span>
+      </div>
+
+      <div class="card-divider"></div>
+
+      <div class="annual-section">
+        <span class="card-date">下次 ${fmt(next)}</span>
+        ${untilNext === 0
+          ? `<span class="card-today-txt">就是今天！</span>`
+          : `<span class="card-number card-next">${num(untilNext)}</span>
+             <span class="card-unit">天後 · 下一次</span>`
+        }
+      </div>
+    `;
+
+  } else if (diff === 0) {
+    card.className = 'card card--today';
+    card.innerHTML = `
+      <div class="card-label">今天！</div>
+      <div class="card-name">${ev.name}</div>
+      <span class="card-date">${fmt(evDate)}</span>
+      <div class="card-today-txt">就是今天！</div>
+    `;
+
+  } else if (diff > 0) {
+    card.className = 'card card--past';
+    card.innerHTML = `
+      <div class="card-label">已過</div>
+      <div class="card-name">${ev.name}</div>
+      <span class="card-date">${fmt(evDate)}</span>
+      <span class="card-number">${num(diff)}</span>
+      <span class="card-unit">天前</span>
+    `;
+
+  } else {
+    card.className = 'card card--future';
+    card.innerHTML = `
+      <div class="card-label">即將到來</div>
+      <div class="card-name">${ev.name}</div>
+      <span class="card-date">${fmt(evDate)}</span>
+      <span class="card-number">${num(-diff)}</span>
+      <span class="card-unit">天後</span>
+    `;
+  }
+
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>
