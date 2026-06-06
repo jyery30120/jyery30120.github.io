@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日文歌詞轉羅馬拼音</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 32px 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    color: #e0aaff;
+    letter-spacing: 2px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: .78rem;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+
+  /* ── 提示橫幅 ── */
+  #banner {
+    display: none;
+    background: #1e2d1a;
+    border: 1px solid #3a5a2a;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: .85rem;
+    line-height: 1.8;
+    color: #b8d9a8;
+  }
+  #banner strong { color: #7fcf5f; }
+  #banner code {
+    background: #111;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-family: monospace;
+    font-size: .9rem;
+    color: #c3e88d;
+    display: inline-block;
+    margin: 4px 0;
+  }
+  .copy-btn {
+    margin-left: 10px;
+    padding: 3px 10px;
+    background: #2d4a20;
+    border: 1px solid #4a7a30;
+    border-radius: 5px;
+    color: #c3e88d;
+    font-size: .8rem;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+  .copy-btn:hover { background: #3a6028; }
+
+  textarea {
+    width: 100%;
+    height: 180px;
+    background: #16213e;
+    border: 1px solid #4a4e69;
+    border-radius: 10px;
+    color: #eee;
+    font-size: 1rem;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.7;
+  }
+  textarea:focus { border-color: #e0aaff; }
+
+  .btn-convert {
+    display: block;
+    margin: 16px auto 0;
+    padding: 12px 40px;
+    background: linear-gradient(135deg, #7b2d8b, #c77dff);
+    border: none;
+    border-radius: 30px;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-convert:hover { opacity: .85; }
+  .btn-convert:disabled { opacity: .4; cursor: default; }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  #voice-select {
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid #4a4e69;
+    background: #16213e;
+    color: #ccc;
+    font-size: .88rem;
+    cursor: pointer;
+    outline: none;
+    max-width: 220px;
+  }
+  #voice-select:focus { border-color: #e0aaff; }
+
+  #status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: .8rem;
+    color: #888;
+    min-height: 18px;
+  }
+  #output {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .line-card {
+    background: #16213e;
+    border: 1px solid #2d2d5e;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .line-texts { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .line-jp     { font-size: 1.05rem; color: #e0aaff; line-height: 1.6; }
+  .line-romaji { font-size: .88rem;  color: #adb5bd; letter-spacing: .4px; word-break: break-word; }
+  .btn-speak {
+    flex-shrink: 0;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #2d2d5e;
+    color: #c77dff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+  }
+  .btn-speak:hover    { background: #3d3d7e; }
+  .btn-speak.speaking { background: #7b2d8b; color: #fff; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>&#127925; 日文歌詞轉羅馬拼音</h1>
+  <p class="subtitle" id="modeLabel">載入中…</p>
+
+  <!-- 僅 file:// 時顯示 -->
+  <div id="banner">
+    <strong>目前為純假名模式</strong>（漢字無法轉換）<br>
+    要啟用漢字轉換，請在終端機執行：<br>
+    <code id="serverCmd">python3 -m http.server 8080</code>
+    <button class="copy-btn" onclick="copyCmd()">複製</button><br>
+    然後用瀏覽器開啟：<strong id="localUrl">http://localhost:8080/japanlyrics.html</strong>
+  </div>
+
+  <textarea id="lyricsInput" placeholder="請貼上日文歌詞，每行一句…
+例：
+桜の花が散っていく
+君のことを思い出した
+ありがとう、さようなら"></textarea>
+
+  <div class="controls-row">
+    <button class="btn-convert" id="convertBtn" onclick="convert()" disabled style="margin:0">轉換</button>
+    <select id="voice-select" onchange="changeVoice(this.value)" title="選擇語音">
+      <option value="">語音載入中…</option>
+    </select>
+  </div>
+  <div id="status"></div>
+  <div id="output"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   假名 → 羅馬字（內嵌，無外部依賴）
+   ══════════════════════════════════════ */
+const R = {
+  'キャ':'kya','キュ':'kyu','キョ':'kyo','キェ':'kye',
+  'シャ':'sha','シュ':'shu','ショ':'sho','シェ':'she',
+  'チャ':'cha','チュ':'chu','チョ':'cho','チェ':'che',
+  'ニャ':'nya','ニュ':'nyu','ニョ':'nyo','ニェ':'nye',
+  'ヒャ':'hya','ヒュ':'hyu','ヒョ':'hyo',
+  'ミャ':'mya','ミュ':'myu','ミョ':'myo',
+  'リャ':'rya','リュ':'ryu','リョ':'ryo',
+  'ギャ':'gya','ギュ':'gyu','ギョ':'gyo',
+  'ジャ':'ja', 'ジュ':'ju', 'ジョ':'jo', 'ジェ':'je',
+  'ヂャ':'ja', 'ヂュ':'ju', 'ヂョ':'jo',
+  'ビャ':'bya','ビュ':'byu','ビョ':'byo',
+  'ピャ':'pya','ピュ':'pyu','ピョ':'pyo',
+  'ファ':'fa', 'フィ':'fi', 'フェ':'fe', 'フォ':'fo','フュ':'fyu',
+  'ティ':'ti', 'テュ':'tyu','トゥ':'tu',
+  'ディ':'di', 'デュ':'dyu','ドゥ':'du',
+  'ウィ':'wi', 'ウェ':'we', 'ウォ':'wo',
+  'ヴァ':'va', 'ヴィ':'vi', 'ヴェ':'ve','ヴォ':'vo','ヴュ':'vyu',
+  'クァ':'kwa','クィ':'kwi','クェ':'kwe','クォ':'kwo',
+  'ツァ':'tsa','ツィ':'tsi','ツェ':'tse','ツォ':'tso',
+  'イェ':'ye',
+  'ア':'a',  'イ':'i',  'ウ':'u',  'エ':'e',  'オ':'o',
+  'カ':'ka', 'キ':'ki', 'ク':'ku', 'ケ':'ke', 'コ':'ko',
+  'サ':'sa', 'シ':'shi','ス':'su', 'セ':'se', 'ソ':'so',
+  'タ':'ta', 'チ':'chi','ツ':'tsu','テ':'te', 'ト':'to',
+  'ナ':'na', 'ニ':'ni', 'ヌ':'nu', 'ネ':'ne', 'ノ':'no',
+  'ハ':'ha', 'ヒ':'hi', 'フ':'fu', 'ヘ':'he', 'ホ':'ho',
+  'マ':'ma', 'ミ':'mi', 'ム':'mu', 'メ':'me', 'モ':'mo',
+  'ヤ':'ya', 'ユ':'yu', 'ヨ':'yo',
+  'ラ':'ra', 'リ':'ri', 'ル':'ru', 'レ':'re', 'ロ':'ro',
+  'ワ':'wa', 'ヲ':'o',
+  'ガ':'ga', 'ギ':'gi', 'グ':'gu', 'ゲ':'ge', 'ゴ':'go',
+  'ザ':'za', 'ジ':'ji', 'ズ':'zu', 'ゼ':'ze', 'ゾ':'zo',
+  'ダ':'da', 'ヂ':'ji', 'ヅ':'zu', 'デ':'de', 'ド':'do',
+  'バ':'ba', 'ビ':'bi', 'ブ':'bu', 'ベ':'be', 'ボ':'bo',
+  'パ':'pa', 'ピ':'pi', 'プ':'pu', 'ペ':'pe', 'ポ':'po',
+  'ヴ':'vu',
+  'ァ':'a','ィ':'i','ゥ':'u','ェ':'e','ォ':'o',
+  'ャ':'ya','ュ':'yu','ョ':'yo',
+};
+
+function hi2ka(s) {
+  return s.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+}
+
+function kanaToRomaji(text) {
+  const s = hi2ka(text);
+  let out = '', i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === 'ン') {
+      out += /[アイウエオャュョ]/.test(s[i+1] || '') ? "n'" : 'n';
+      i++; continue;
+    }
+    if (c === 'ッ') {
+      const nr = R[(s[i+1]||'') + (s[i+2]||'')] ?? R[s[i+1]||''] ?? '';
+      if (nr && !/^[aeiou]/.test(nr)) out += nr[0];
+      i++; continue;
+    }
+    if (c === 'ー') { out += out.match(/[aeiou]$/)?.[0] ?? ''; i++; continue; }
+    if (i + 1 < s.length) {
+      const dg = c + s[i+1];
+      if (R[dg] !== undefined) { out += R[dg]; i += 2; continue; }
+    }
+    out += R[c] ?? c;
+    i++;
+  }
+  return out;
+}
+
+/* ══════════════════════════════════════
+   模式偵測 & kuromoji（HTTP 模式）
+   ══════════════════════════════════════ */
+let tokenizer = null;
+const isFile = location.protocol === 'file:';
+
+function setMode(label) {
+  document.getElementById('modeLabel').textContent = label;
+}
+
+function loadScript(url) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = url; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function init() {
+  if (isFile) {
+    document.getElementById('banner').style.display = 'block';
+    // 推算本機路徑
+    const dir = location.pathname.replace(/[^/]+$/, '').replace(/^\//, '');
+    document.getElementById('localUrl').textContent =
+      'http://localhost:8080/' + location.pathname.split('/').pop();
+    setMode('純假名模式｜漢字保留原字');
+    document.getElementById('status').textContent = '假名轉換已就緒（漢字請改用本機伺服器模式）';
+    document.getElementById('convertBtn').disabled = false;
+    return;
+  }
+
+  // HTTP / HTTPS 模式：載入 kuromoji
+  setMode('完整模式（含漢字轉換）');
+  document.getElementById('status').textContent = '載入日文分析器中，請稍候…';
+  document.getElementById('convertBtn').disabled = true;
+
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js');
+    tokenizer = await new Promise((res, rej) =>
+      kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
+        .build((err, t) => err ? rej(err) : res(t))
+    );
+    document.getElementById('status').textContent = '分析器就緒，支援完整漢字轉換！';
+  } catch (e) {
+    document.getElementById('status').textContent = '分析器載入失敗，改為純假名模式。';
+    setMode('純假名模式（網路載入失敗）');
+  }
+  document.getElementById('convertBtn').disabled = false;
+}
+
+function lineToRomaji(text) {
+  if (tokenizer) {
+    let result = '';
+    for (const t of tokenizer.tokenize(text)) {
+      const r = kanaToRomaji(t.reading || t.surface_form);
+      if (!r) continue;
+      // 標點前不加空格
+      const isPunct = /^[、。！？…・「」『』（）〔〕【】：；♪〜]/.test(r);
+      if (result && !isPunct) result += ' ';
+      result += r;
+    }
+    return result;
+  }
+  return kanaToRomaji(text);
+}
+
+/* ══════════════
+   UI
+   ══════════════ */
+function convert() {
+  const raw = document.getElementById('lyricsInput').value;
+  if (!raw.trim()) return;
+
+  const output = document.getElementById('output');
+  output.innerHTML = '';
+  let count = 0;
+
+  for (const line of raw.split('\n')) {
+    const text = line.trim();
+    if (!text) {
+      const sp = document.createElement('div');
+      sp.style.height = '6px';
+      output.appendChild(sp);
+      continue;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'line-card';
+
+    const texts = document.createElement('div');
+    texts.className = 'line-texts';
+
+    const jpEl = document.createElement('div');
+    jpEl.className = 'line-jp';
+    jpEl.textContent = text;
+
+    const romajiEl = document.createElement('div');
+    romajiEl.className = 'line-romaji';
+    romajiEl.textContent = lineToRomaji(text);
+
+    texts.append(jpEl, romajiEl);
+
+    const speakBtn = document.createElement('button');
+    speakBtn.className = 'btn-speak';
+    speakBtn.title = '朗讀此行';
+    speakBtn.innerHTML = '&#9654;';
+    speakBtn.addEventListener('click', () => speakLine(text, speakBtn));
+
+    card.append(texts, speakBtn);
+    output.appendChild(card);
+    count++;
+  }
+
+  document.getElementById('status').textContent =
+    count ? `轉換完成，共 ${count} 行。` : '';
+}
+
+function copyCmd() {
+  navigator.clipboard.writeText(document.getElementById('serverCmd').textContent)
+    .then(() => { const b = document.querySelector('.copy-btn'); b.textContent='已複製！'; setTimeout(()=>b.textContent='複製',1500); });
+}
+
+/* ══════════════
+   語音：清單 & 切換
+   ══════════════ */
+let jpVoice = null;
+let allJpVoices = [];
+
+function initVoice() {
+  const load = () => {
+    const voices = speechSynthesis.getVoices();
+    allJpVoices = voices
+      .filter(v => v.lang === 'ja-JP' || v.lang.startsWith('ja'))
+      .sort((a, b) => (/日本語/i.test(a.name) ? 0 : 1) - (/日本語/i.test(b.name) ? 0 : 1));
+    if (!allJpVoices.length) return;
+
+    const sel = document.getElementById('voice-select');
+    sel.innerHTML = '';
+    allJpVoices.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.name.replace(/Microsoft |Google /, '');
+      sel.appendChild(opt);
+    });
+    jpVoice = allJpVoices[0];
+    sel.value = 0;
+  };
+  load();
+  speechSynthesis.onvoiceschanged = load;
+}
+
+function changeVoice(idx) {
+  if (allJpVoices[idx]) jpVoice = allJpVoices[idx];
+}
+
+/* ══════════════
+   語音朗讀
+   ══════════════ */
+let speakingBtn = null;
+
+function speakLine(text, btn) {
+  if (!('speechSynthesis' in window)) { alert('瀏覽器不支援語音朗讀'); return; }
+  if (speakingBtn === btn && speechSynthesis.speaking) {
+    speechSynthesis.cancel(); return;
+  }
+  speechSynthesis.cancel();
+  if (speakingBtn) { speakingBtn.classList.remove('speaking'); speakingBtn.innerHTML = '&#9654;'; }
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ja-JP';
+  utter.rate = 0.9;
+  if (jpVoice) utter.voice = jpVoice;
+
+  speakingBtn = btn;
+  btn.classList.add('speaking');
+  btn.innerHTML = '&#9646;&#9646;';
+
+  utter.onend = utter.onerror = () => {
+    btn.classList.remove('speaking');
+    btn.innerHTML = '&#9654;';
+    if (speakingBtn === btn) speakingBtn = null;
+  };
+  speechSynthesis.speak(utter);
+}
+
+initVoice();
+init();
+</script>
+</body>
+</html>
