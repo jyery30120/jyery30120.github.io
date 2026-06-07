@@ -294,23 +294,23 @@ async function init() {
     return;
   }
 
-  // HTTP / HTTPS 模式：載入 kuromoji
-  setMode('完整模式（含漢字轉換）');
-  document.getElementById('status').textContent = '載入日文分析器中，請稍候…';
-  document.getElementById('convertBtn').disabled = true;
+  // HTTP / HTTPS 模式：先開放純假名轉換，kuromoji 在背景載入
+  setMode('純假名模式｜漢字保留原字（漢字分析器載入中…）');
+  document.getElementById('status').textContent = '日文分析器背景載入中，可先使用純假名轉換…';
+  document.getElementById('convertBtn').disabled = false;
 
   try {
-    await loadScript('https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js');
+    await loadScript('kuromoji.js');
     tokenizer = await new Promise((res, rej) =>
-      kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' })
+      kuromoji.builder({ dicPath: 'dict/' })
         .build((err, t) => err ? rej(err) : res(t))
     );
+    setMode('完整模式（含漢字轉換）');
     document.getElementById('status').textContent = '分析器就緒，支援完整漢字轉換！';
   } catch (e) {
-    document.getElementById('status').textContent = '分析器載入失敗，改為純假名模式。';
-    setMode('純假名模式（網路載入失敗）');
+    document.getElementById('status').textContent = '分析器載入失敗，使用純假名模式。';
+    setMode('純假名模式（漢字保留原字）');
   }
-  document.getElementById('convertBtn').disabled = false;
 }
 
 function lineToRomaji(text) {
