@@ -22,6 +22,11 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .field input{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:.55rem .75rem;color:var(--text);font-size:.95rem;outline:none;transition:.2s;}
 .field input:focus{border-color:var(--accent);}
 .field .hint{font-size:.7rem;color:var(--muted);}
+.field.check{justify-content:center;}
+.check-row{display:flex;align-items:center;gap:.5rem;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:.55rem .75rem;cursor:pointer;transition:.2s;}
+.check-row:hover{border-color:var(--accent);}
+.check-row input{width:1.05rem;height:1.05rem;accent-color:var(--accent);cursor:pointer;flex:none;}
+.check-row span{font-size:.9rem;}
 .calc-btn{display:block;margin:0 auto 2rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:.75rem 3rem;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s;}
 .calc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,143,255,.35);}
 
@@ -99,11 +104,11 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
   </div>
   <div class="field">
     <label>月薪（元）</label>
-    <input type="number" id="baseSalary" value="63700" step="100">
+    <input type="number" id="baseSalary" value="66000" step="100">
   </div>
   <div class="field">
     <label>季分紅月數</label>
-    <input type="number" id="quarterlyMonths" value="4.3" step="0.1">
+    <input type="number" id="quarterlyMonths" value="5" step="0.1">
     <span class="hint">每季分紅 = 月薪 × 此數</span>
   </div>
   <div class="field">
@@ -130,6 +135,14 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
     <label>年分紅成長率（%）</label>
     <input type="number" id="bonusGrowthRateAnnual" value="25" step="0.1" oninput="syncFromAnnual()">
     <span class="hint">換算自季成長率</span>
+  </div>
+  <div class="field check">
+    <label>試用期</label>
+    <label class="check-row">
+      <input type="checkbox" id="probation" checked onchange="calculate()">
+      <span>考慮試用期</span>
+    </label>
+    <span class="hint">勾選：前3個月不計分紅、年終按比例、7月後入職無運動會獎金<br>不勾：分紅全額、年終＝月薪×2、第一年也有運動會獎金</span>
   </div>
 </div>
 
@@ -158,14 +171,18 @@ function fmt(n) {
 
 function calculate() {
   const startMonth      = Math.min(12, Math.max(1, parseInt(document.getElementById('startMonth').value) || 1));
-  const baseSalary      = parseFloat(document.getElementById('baseSalary').value) || 65000;
-  const quarterlyMonths = parseFloat(document.getElementById('quarterlyMonths').value) || 4.3;
+  const baseSalary      = parseFloat(document.getElementById('baseSalary').value) || 66000;
+  const quarterlyMonths = parseFloat(document.getElementById('quarterlyMonths').value) || 5;
   const firstRaiseRate  = (parseFloat(document.getElementById('firstRaiseRate').value) || 5) / 100;
   const raiseRate       = (parseFloat(document.getElementById('raiseRate').value) || 5) / 100;
   const sportsBonus     = parseFloat(document.getElementById('sportsBonus').value) || 25000;
   const bonusGrowthRate = (parseFloat(document.getElementById('bonusGrowthRate').value) || 0) / 100;
 
-  const qualifyAbsMonth = startMonth + 3;
+  const probation       = document.getElementById('probation').checked;
+
+  // 勾選試用期：前 3 個月不計分紅、年終按在職比例
+  // 不勾：每次分紅都全額計算、年終直接 = 月薪 × 2
+  const qualifyAbsMonth = probation ? startMonth + 3 : -Infinity;
 
   // Salary at any abs month: raises happen every April (abs months 4, 16, 28, 40, 52)
   // First raise uses firstRaiseRate, subsequent raises use raiseRate
@@ -292,14 +309,18 @@ function calculate() {
         const firstEligible = Math.max(startMonth, prevYearStart);
         const eligibleMths  = Math.max(0, prevYearEnd - firstEligible + 1);
         if (eligibleMths > 0) {
-          const annualBonus = prevDecSalary * 2 * (eligibleMths / 12);
+          const ratio = probation ? eligibleMths / 12 : 1;
+          const annualBonus = prevDecSalary * 2 * ratio;
           income += annualBonus;
-          items.push({ label: `年終獎金(${eligibleMths}/12 個月)`, amount: annualBonus, cls: 'annual' });
+          const label = probation
+            ? `年終獎金(${eligibleMths}/12 個月)`
+            : '年終獎金(月薪 × 2)';
+          items.push({ label, amount: annualBonus, cls: 'annual' });
         }
       }
 
       // 6. Sports bonus (October) — year 1 only if joined before July
-      const eligibleSports = year > 1 || startMonth <= 6;
+      const eligibleSports = !probation || year > 1 || startMonth <= 6;
       if (month === 10 && eligibleSports) {
         income += sportsBonus;
         items.push({ label: '運動會獎金', amount: sportsBonus, cls: 'sports' });
