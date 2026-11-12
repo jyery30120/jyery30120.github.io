@@ -104,7 +104,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
   </div>
   <div class="field">
     <label>月薪（元）</label>
-    <input type="number" id="baseSalary" value="66000" step="100">
+    <input type="number" id="baseSalary" value="65000" step="100">
   </div>
   <div class="field">
     <label>季分紅月數</label>
@@ -171,7 +171,7 @@ function fmt(n) {
 
 function calculate() {
   const startMonth      = Math.min(12, Math.max(1, parseInt(document.getElementById('startMonth').value) || 1));
-  const baseSalary      = parseFloat(document.getElementById('baseSalary').value) || 66000;
+  const baseSalary      = parseFloat(document.getElementById('baseSalary').value) || 65000;
   const quarterlyMonths = parseFloat(document.getElementById('quarterlyMonths').value) || 5;
   const firstRaiseRate  = (parseFloat(document.getElementById('firstRaiseRate').value) || 5) / 100;
   const raiseRate       = (parseFloat(document.getElementById('raiseRate').value) || 5) / 100;
