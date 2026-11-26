@@ -27,7 +27,13 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .check-row:hover{border-color:var(--accent);}
 .check-row input{width:1.05rem;height:1.05rem;accent-color:var(--accent);cursor:pointer;flex:none;}
 .check-row span{font-size:.9rem;}
+.preset-row{display:flex;gap:.4rem;}
+.preset-btn{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:.35rem .5rem;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;}
+.preset-btn:hover{border-color:var(--accent);color:var(--text);}
+.preset-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .calc-btn{display:block;margin:0 auto 2rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:.75rem 3rem;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s;}
+.download-btn{display:block;margin:0 auto 1.5rem;background:var(--surface2);color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:.55rem 2rem;font-size:.9rem;font-weight:600;cursor:pointer;transition:.2s;}
+.download-btn:hover{border-color:var(--accent);color:var(--accent);}
 .calc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,143,255,.35);}
 
 /* Summary */
@@ -108,12 +114,16 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
   </div>
   <div class="field">
     <label>季分紅月數</label>
-    <input type="number" id="quarterlyMonths" value="5" step="0.1">
+    <input type="number" id="quarterlyMonths" value="5.4" step="0.1" oninput="markPresets()">
+    <div class="preset-row">
+      <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="5.4" onclick="applyPreset(this)">31</button>
+      <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="5.85" onclick="applyPreset(this)">32</button>
+    </div>
     <span class="hint">每季分紅 = 月薪 × 此數</span>
   </div>
   <div class="field">
     <label>第一次調薪（%）</label>
-    <input type="number" id="firstRaiseRate" value="2.5" step="0.1">
+    <input type="number" id="firstRaiseRate" value="5" step="0.1">
     <span class="hint">第一個4月套用此比例</span>
   </div>
   <div class="field">
@@ -124,22 +134,31 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
   <div class="field">
     <label>運動會獎金（元）</label>
     <input type="number" id="sportsBonus" value="30000" step="1000">
-    <span class="hint">每年10月發放</span>
+    <span class="hint">每年11月發放（第一年金額）</span>
+  </div>
+  <div class="field">
+    <label>運動會獎金年增（元）</label>
+    <input type="number" id="sportsBonusGrowth" value="5000" step="1000">
+    <span class="hint">每年比前一年多發的金額</span>
   </div>
   <div class="field">
     <label>季分紅成長率（%）</label>
-    <input type="number" id="bonusGrowthRate" value="5.7371" step="0.1" oninput="syncFromQuarterly()">
+    <input type="number" id="bonusGrowthRate" value="6.779" step="0.1" oninput="syncFromQuarterly(); markPresets()">
     <span class="hint">每季分紅額外成長</span>
   </div>
   <div class="field">
     <label>年分紅成長率（%）</label>
-    <input type="number" id="bonusGrowthRateAnnual" value="25" step="0.1" oninput="syncFromAnnual()">
+    <input type="number" id="bonusGrowthRateAnnual" value="30" step="0.1" oninput="syncFromAnnual(); markPresets()">
+    <div class="preset-row">
+      <button type="button" class="preset-btn" data-target="bonusGrowthRateAnnual" data-value="30" onclick="applyPreset(this)">預估</button>
+      <button type="button" class="preset-btn" data-target="bonusGrowthRateAnnual" data-value="0" onclick="applyPreset(this)">保守</button>
+    </div>
     <span class="hint">換算自季成長率</span>
   </div>
   <div class="field check">
     <label>試用期</label>
     <label class="check-row">
-      <input type="checkbox" id="probation" checked onchange="calculate()">
+      <input type="checkbox" id="probation" onchange="calculate()">
       <span>考慮試用期</span>
     </label>
     <span class="hint">勾選：前3個月不計分紅、年終按比例、7月後入職無運動會獎金<br>不勾：分紅全額、年終＝月薪×2、第一年也有運動會獎金</span>
@@ -149,6 +168,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 <button class="calc-btn" onclick="calculate()">計算薪資</button>
 
 <div id="results">
+  <button type="button" class="download-btn" onclick="downloadDetails()">⬇ 下載明細（CSV）</button>
   <div class="summary-grid" id="summaryGrid"></div>
   <div class="ten-year" id="tenYearTable"></div>
   <div class="years" id="yearsContainer"></div>
@@ -176,6 +196,8 @@ function calculate() {
   const firstRaiseRate  = (parseFloat(document.getElementById('firstRaiseRate').value) || 5) / 100;
   const raiseRate       = (parseFloat(document.getElementById('raiseRate').value) || 5) / 100;
   const sportsBonus     = parseFloat(document.getElementById('sportsBonus').value) || 30000;
+  const sportsGrowthRaw = parseFloat(document.getElementById('sportsBonusGrowth').value);
+  const sportsBonusGrowth = isNaN(sportsGrowthRaw) ? 5000 : sportsGrowthRaw;
   const bonusGrowthRate = (parseFloat(document.getElementById('bonusGrowthRate').value) || 0) / 100;
 
   const probation       = document.getElementById('probation').checked;
@@ -319,11 +341,12 @@ function calculate() {
         }
       }
 
-      // 6. Sports bonus (October) — year 1 only if joined before July
+      // 6. Sports bonus (November) — year 1 only if joined before July
       const eligibleSports = !probation || year > 1 || startMonth <= 6;
-      if (month === 10 && eligibleSports) {
-        income += sportsBonus;
-        items.push({ label: '運動會獎金', amount: sportsBonus, cls: 'sports' });
+      if (month === 11 && eligibleSports) {
+        const sportsAmount = sportsBonus + sportsBonusGrowth * (year - 1);
+        income += sportsAmount;
+        items.push({ label: '運動會獎金', amount: sportsAmount, cls: 'sports' });
       }
 
       yearTotal += income;
@@ -336,9 +359,9 @@ function calculate() {
     results.push({ year, salary: yearEndSalary, yearTotal, cumulativeTotal, months });
   }
 
+  lastResults = results;
   renderResults(results, baseSalary, startMonth);
   document.getElementById('results').style.display = 'block';
-  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderResults(results, baseSalary, startMonth) {
@@ -434,6 +457,52 @@ function renderResults(results, baseSalary, startMonth) {
   document.getElementById('yearsContainer').innerHTML = yearsHTML;
 }
 
+let lastResults = null;
+
+// Download month-by-month details as CSV (with BOM so Excel reads Chinese correctly)
+function downloadDetails() {
+  if (!lastResults) calculate();
+  const cols = [
+    ['salary', '月薪'], ['stock', '購股補貼 3%'], ['quarterly', '季分紅'],
+    ['july', '7月年度分紅'], ['annual', '年終'], ['sports', '運動會獎金']
+  ];
+  const esc = v => {
+    const t = String(v);
+    return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const rows = [['年度', '月份', ...cols.map(c => c[1]), '月小計', '累計', '備註']];
+  let running = 0;
+  for (const r of lastResults) {
+    for (const m of r.months) {
+      running += m.income;
+      const sums = Object.fromEntries(cols.map(c => [c[0], 0]));
+      const notes = [];
+      for (const it of m.items) {
+        if (it.cls in sums) sums[it.cls] += it.amount;
+        if (it.cls === 'quarterly' || it.cls === 'july' || it.cls === 'annual') {
+          notes.push(it.effMonths != null ? `${it.label} (${it.effMonths.toFixed(2)} 個月)` : it.label);
+        }
+      }
+      rows.push([
+        `第${r.year}年`, MONTH_NAMES[m.month],
+        ...cols.map(c => Math.round(sums[c[0]])),
+        Math.round(m.income), Math.round(running), notes.join('; ')
+      ]);
+    }
+    rows.push([`第${r.year}年合計`, '', ...cols.map(() => ''), Math.round(r.yearTotal), Math.round(r.cumulativeTotal), '']);
+  }
+  const csv = '\uFEFF' + rows.map(row => row.map(esc).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'TSMC薪資明細.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function toggleYear(header) {
   header.classList.toggle('open');
   const body = header.nextElementSibling;
@@ -452,8 +521,28 @@ function syncFromAnnual() {
   document.getElementById('bonusGrowthRate').value = parseFloat(quarterly.toFixed(4));
 }
 
+// Preset buttons: fill the field, keep linked fields in sync, recalculate
+function applyPreset(btn) {
+  document.getElementById(btn.dataset.target).value = btn.dataset.value;
+  if (btn.dataset.target === 'bonusGrowthRateAnnual') syncFromAnnual();
+  markPresets();
+  calculate();
+}
+
+// Highlight the preset whose value matches what is in its field
+function markPresets() {
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    const v = parseFloat(document.getElementById(btn.dataset.target).value);
+    btn.classList.toggle('active', Math.abs(v - parseFloat(btn.dataset.value)) < 1e-3);
+  });
+}
+
 // Auto-calculate on load
-window.addEventListener('load', calculate);
+window.addEventListener('load', () => {
+  document.getElementById('startMonth').value = new Date().getMonth() + 1;
+  markPresets();
+  calculate();
+});
 </script>
 </body>
 </html>
