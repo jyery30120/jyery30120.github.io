@@ -74,6 +74,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .item-chip.july{border-left:3px solid var(--orange);}
 .item-chip.annual{border-left:3px solid var(--green);}
 .item-chip.sports{border-left:3px solid var(--red);}
+.year-note{margin:0 0 1rem;padding:.55rem .8rem;background:var(--surface2);border-left:3px solid var(--accent2);border-radius:6px;font-size:.78rem;color:var(--muted);line-height:1.6;}
 .year-footer{background:var(--surface2);padding:.6rem 1.2rem;display:flex;justify-content:flex-end;gap:2rem;font-size:.82rem;}
 .year-footer span{color:var(--muted);}
 .year-footer strong{color:var(--text);}
@@ -453,6 +454,7 @@ function renderResults(results, baseSalary, startMonth, quarterlyMonths) {
     }).join('');
 
     return `
+      ${r.year === 2 ? `<div class="year-note">※ 第二年 7 月年度分紅 ＝ 當年 2 月 ＋ 前一年 5、8、11 月季分紅。若起算月份晚於第一年的 5、8、11 月，這幾筆季分紅不會計入，7 月年度分紅會偏低，請自行補回。</div>` : ''}
       <div class="year-block">
         <div class="year-header" onclick="toggleYear(this)">
           <span class="year-label">第 ${r.year} 年</span>
@@ -529,7 +531,7 @@ function downloadDetails() {
 
 function toggleYear(header) {
   header.classList.toggle('open');
-  const body = header.nextElementSibling;
+  const body = header.parentElement.querySelector('.year-body');
   body.classList.toggle('open');
 }
 
