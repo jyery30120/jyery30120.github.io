@@ -454,7 +454,7 @@ function renderResults(results, baseSalary, startMonth, quarterlyMonths) {
     }).join('');
 
     return `
-      ${r.year === 3 ? `<div class="year-note">※ 第二年 7 月年度分紅 ＝ 當年 2 月 ＋ 前一年 5、8、11 月季分紅。若起算月份晚於第一年的 5、8、11 月，這幾筆季分紅不會計入，7 月年度分紅&第二年年薪會偏低，請自行補回。</div>` : ''}
+      ${r.year === 3 ? `<div class="year-note">※ 第二年 7 月年度分紅 ＝ 當年 2 月 ＋ 前一年 5、8、11 月季分紅。若起算月份晚於第一年的 5、8、11 月，這幾筆季分紅不會計入，7 月年度分紅&第二年年薪會偏低，非新人前一年有領到請自行加入計算。</div>` : ''}
       <div class="year-block">
         <div class="year-header" onclick="toggleYear(this)">
           <span class="year-label">第 ${r.year} 年</span>
