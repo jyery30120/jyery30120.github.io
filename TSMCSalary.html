@@ -118,6 +118,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
     <label>月薪（元）</label>
     <input type="number" id="baseSalary" value="65000" step="100" oninput="markPresets()">
     <div class="preset-row">
+      <button type="button" class="preset-btn" data-target="baseSalary" data-value="41700" onclick="applyPreset(this)">23</button>
       <button type="button" class="preset-btn" data-target="baseSalary" data-value="65000" onclick="applyPreset(this)">31</button>
       <button type="button" class="preset-btn" data-target="baseSalary" data-value="75500" onclick="applyPreset(this)">32</button>
     </div>
@@ -126,6 +127,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
     <label>季分紅月數</label>
     <input type="number" id="quarterlyMonths" value="5.4" step="0.1" oninput="markPresets()">
     <div class="preset-row">
+      <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="3.1" onclick="applyPreset(this)">23</button>
       <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="5.4" onclick="applyPreset(this)">31</button>
       <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="5.85" onclick="applyPreset(this)">32</button>
     </div>
