@@ -37,6 +37,11 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 .calc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(108,143,255,.35);}
 
 /* Summary */
+.quick-card{max-width:1300px;margin:0 auto 1rem;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent2);border-radius:12px;padding:1rem 1.25rem;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.4rem;}
+.quick-card .label{font-size:.72rem;color:var(--muted);letter-spacing:.04em;margin-bottom:.2rem;}
+.quick-card .value{font-size:1.4rem;font-weight:700;color:var(--accent2);}
+.quick-card .formula{font-size:.85rem;color:var(--text);}
+.quick-card .note{font-size:.72rem;color:var(--muted);line-height:1.6;}
 .summary-grid{max-width:1300px;margin:0 auto 1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
 .stat-card .label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3rem;}
@@ -169,6 +174,7 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 
 <div id="results">
   <button type="button" class="download-btn" onclick="downloadDetails()">⬇ 下載明細（CSV）</button>
+  <div class="quick-card" id="quickCard"></div>
   <div class="summary-grid" id="summaryGrid"></div>
   <div class="ten-year" id="tenYearTable"></div>
   <div class="years" id="yearsContainer"></div>
@@ -360,11 +366,25 @@ function calculate() {
   }
 
   lastResults = results;
-  renderResults(results, baseSalary, startMonth);
+  renderResults(results, baseSalary, startMonth, quarterlyMonths);
   document.getElementById('results').style.display = 'block';
 }
 
-function renderResults(results, baseSalary, startMonth) {
+function renderResults(results, baseSalary, startMonth, quarterlyMonths) {
+  // Quick estimate card: (分紅月數 × 8 + 14) × 底薪
+  const quickMonths = quarterlyMonths * 8 + 14;
+  document.getElementById('quickCard').innerHTML = `
+    <div>
+      <div class="label">⚡ 快速估算年薪</div>
+      <div class="value">${fmt(quickMonths * baseSalary)}</div>
+    </div>
+    <div class="formula">(${quarterlyMonths} × 8 + 14) ＝ ${parseFloat(quickMonths.toFixed(2))} 個月 × 月薪 ${fmt(baseSalary)}</div>
+    <div class="note">
+      說明：此為網路常見算法。分紅月數 × 8 ＝ 4 次季分紅 ＋ 7 月年度分紅（約等於 4 季分紅總和）；14 ＝ 12 個月月薪 ＋ 年終 2 個月。<br>
+      以目前月薪計算一整年，不含購股補貼、運動會獎金、調薪與分紅成長，也不考慮試用期，僅供快速參考。
+    </div>
+  `;
+
   const yr5 = results[4];
   const yr1  = results[0];
 
