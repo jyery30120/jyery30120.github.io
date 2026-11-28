@@ -111,7 +111,11 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 <div class="inputs-panel">
   <div class="field">
     <label>起算月份</label>
-    <input type="number" id="startMonth" value="1" min="1" max="12">
+    <input type="number" id="startMonth" value="1" min="1" max="12" oninput="markPresets()">
+    <div class="preset-row">
+      <button type="button" class="preset-btn" id="curMonthBtn" data-target="startMonth" data-value="1" onclick="applyPreset(this)">當月</button>
+      <button type="button" class="preset-btn" data-target="startMonth" data-value="1" onclick="applyPreset(this)">1月</button>
+    </div>
     <span class="hint">1 = 1月，12 = 12月</span>
   </div>
   <div class="field">
@@ -126,14 +130,20 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
   </div>
   <div class="field">
     <label>季分紅月數</label>
-    <input type="number" id="quarterlyMonths" value="5.4" step="0.1" oninput="markPresets()">
+    <input type="number" id="quarterlyMonths" value="5.4" step="0.1" oninput="onQuarterlyInput()">
     <div class="preset-row">
       <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="3.1" onclick="applyPreset(this)">23</button>
       <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="5.4" onclick="applyPreset(this)">31</button>
       <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="5.85" onclick="applyPreset(this)">32</button>
       <button type="button" class="preset-btn" data-target="quarterlyMonths" data-value="6.1" onclick="applyPreset(this)">33</button>
     </div>
-    <span class="hint">每季分紅 = 月薪 × 此數</span>
+    <div class="preset-row">
+      <button type="button" class="preset-btn rating-btn" data-mult="0.7" onclick="applyRating(this)">S-</button>
+      <button type="button" class="preset-btn rating-btn" data-mult="1" onclick="applyRating(this)">S</button>
+      <button type="button" class="preset-btn rating-btn" data-mult="1.12" onclick="applyRating(this)">S+</button>
+      <button type="button" class="preset-btn rating-btn" data-mult="1.28" onclick="applyRating(this)">O</button>
+    </div>
+    <span class="hint">每季分紅 = 月薪 × 此數<br>考績：S- ×0.7、S 預設、S+ ×1.12、O ×1.28</span>
   </div>
   <div class="field">
     <label>第一次調薪（%）</label>
@@ -552,7 +562,37 @@ function syncFromAnnual() {
 }
 
 // Preset buttons: fill the field, keep linked fields in sync, recalculate
+// 季分紅月數 = 職等基準月數 × 考績倍率
+let quarterlyBase = 5.4;
+let ratingMult = 1;
+
+function setQuarterlyFromBase() {
+  document.getElementById('quarterlyMonths').value = parseFloat((quarterlyBase * ratingMult).toFixed(3));
+}
+
+// Rating buttons: apply multiplier to the grade's base months
+function applyRating(btn) {
+  ratingMult = parseFloat(btn.dataset.mult);
+  setQuarterlyFromBase();
+  markPresets();
+  calculate();
+}
+
+// Typing a value directly: treat it as the new base and reset rating to S
+function onQuarterlyInput() {
+  quarterlyBase = parseFloat(document.getElementById('quarterlyMonths').value) || 0;
+  ratingMult = 1;
+  markPresets();
+}
+
 function applyPreset(btn) {
+  if (btn.dataset.target === 'quarterlyMonths') {
+    quarterlyBase = parseFloat(btn.dataset.value);
+    setQuarterlyFromBase();
+    markPresets();
+    calculate();
+    return;
+  }
   document.getElementById(btn.dataset.target).value = btn.dataset.value;
   if (btn.dataset.target === 'bonusGrowthRateAnnual') syncFromAnnual();
   markPresets();
@@ -561,15 +601,22 @@ function applyPreset(btn) {
 
 // Highlight the preset whose value matches what is in its field
 function markPresets() {
-  document.querySelectorAll('.preset-btn').forEach(btn => {
-    const v = parseFloat(document.getElementById(btn.dataset.target).value);
+  document.querySelectorAll('.rating-btn').forEach(btn => {
+    btn.classList.toggle('active', Math.abs(ratingMult - parseFloat(btn.dataset.mult)) < 1e-6);
+  });
+  document.querySelectorAll('.preset-btn[data-target]').forEach(btn => {
+    const v = btn.dataset.target === 'quarterlyMonths'
+      ? quarterlyBase
+      : parseFloat(document.getElementById(btn.dataset.target).value);
     btn.classList.toggle('active', Math.abs(v - parseFloat(btn.dataset.value)) < 1e-3);
   });
 }
 
 // Auto-calculate on load
 window.addEventListener('load', () => {
-  document.getElementById('startMonth').value = new Date().getMonth() + 1;
+  const curMonth = new Date().getMonth() + 1;
+  document.getElementById('curMonthBtn').dataset.value = curMonth;
+  document.getElementById('startMonth').value = curMonth;
   markPresets();
   calculate();
 });
