@@ -111,7 +111,11 @@ h1{text-align:center;padding:2rem 1rem 1rem;font-size:1.8rem;background:linear-g
 <div class="inputs-panel">
   <div class="field">
     <label>起算月份</label>
-    <input type="number" id="startMonth" value="1" min="1" max="12">
+    <input type="number" id="startMonth" value="1" min="1" max="12" oninput="markPresets()">
+    <div class="preset-row">
+      <button type="button" class="preset-btn" id="curMonthBtn" data-target="startMonth" data-value="1" onclick="applyPreset(this)">當月</button>
+      <button type="button" class="preset-btn" data-target="startMonth" data-value="1" onclick="applyPreset(this)">1月</button>
+    </div>
     <span class="hint">1 = 1月，12 = 12月</span>
   </div>
   <div class="field">
@@ -610,7 +614,9 @@ function markPresets() {
 
 // Auto-calculate on load
 window.addEventListener('load', () => {
-  document.getElementById('startMonth').value = new Date().getMonth() + 1;
+  const curMonth = new Date().getMonth() + 1;
+  document.getElementById('curMonthBtn').dataset.value = curMonth;
+  document.getElementById('startMonth').value = curMonth;
   markPresets();
   calculate();
 });
